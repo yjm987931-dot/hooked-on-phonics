@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hooked on Phonics - 파닉스 학습</title>
+<style>
+:root {
+    --primary: #6C63FF;
+    --primary-light: #8B83FF;
+    --secondary: #FF6584;
+    --accent: #FFD166;
+    --success: #06D6A0;
+    --warning: #EF476F;
+    --bg: #F0F2FF;
+    --card: #FFFFFF;
+    --text: #2D3436;
+    --text-light: #636E72;
+    --shadow: 0 4px 15px rgba(108,99,255,0.15);
+    --radius: 16px;
+    --vowel-a: #FF6B6B;
+    --vowel-i: #4ECDC4;
+    --vowel-o: #45B7D1;
+    --vowel-u: #A66CFF;
+    --vowel-e: #FFD93D;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI','Malgun Gothic',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+button { cursor:pointer; border:none; font-family:inherit; font-size:14px; border-radius:10px; padding:10px 20px; transition:all .2s; }
+button:hover { transform:translateY(-2px); }
+button:active { transform:translateY(0); }
+input { font-family:inherit; font-size:15px; padding:12px 16px; border:2px solid #E0E0E0; border-radius:10px; outline:none; transition:border .2s; }
+input:focus { border-color:var(--primary); }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-light); }
+.btn-secondary { background:var(--secondary); color:#fff; }
+.btn-success { background:var(--success); color:#fff; }
+.btn-warning { background:var(--warning); color:#fff; }
+.btn-outline { background:transparent; border:2px solid var(--primary); color:var(--primary); }
+.btn-outline:hover { background:var(--primary); color:#fff; }
+.btn-sm { padding:6px 14px; font-size:13px; }
+.hidden { display:none !important; }
+
+/* ===== Login ===== */
+#login-screen { display:flex; justify-content:center; align-items:center; min-height:100vh; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); }
+.login-box { background:#fff; padding:48px 40px; border-radius:24px; box-shadow:0 20px 60px rgba(0,0,0,0.2); width:380px; text-align:center; }
+.login-box h1 { font-size:28px; margin-bottom:8px; color:var(--primary); }
+.login-box p { color:var(--text-light); margin-bottom:28px; font-size:14px; }
+.login-box input { width:100%; margin-bottom:14px; }
+.login-box button { width:100%; padding:14px; font-size:16px; font-weight:700; }
+.login-error { color:var(--warning); font-size:13px; margin-bottom:10px; min-height:20px; }
+
+/* ===== Nav ===== */
+nav { background:#fff; box-shadow:0 2px 10px rgba(0,0,0,0.08); padding:0 24px; display:flex; align-items:center; height:60px; position:sticky; top:0; z-index:100; }
+nav .logo { font-size:20px; font-weight:800; color:var(--primary); margin-right:32px; white-space:nowrap; }
+nav .nav-links { display:flex; gap:4px; flex:1; overflow-x:auto; }
+nav .nav-links button { background:none; color:var(--text-light); padding:8px 16px; font-weight:600; font-size:13px; border-radius:8px; white-space:nowrap; }
+nav .nav-links button.active { background:var(--primary); color:#fff; }
+nav .user-info { display:flex; align-items:center; gap:10px; margin-left:16px; white-space:nowrap; }
+nav .user-info span { font-size:13px; color:var(--text-light); }
+nav .user-info button { font-size:12px; padding:6px 12px; }
+
+/* ===== Screens ===== */
+.screen { display:none; padding:24px; max-width:1200px; margin:0 auto; }
+.screen.active { display:block; }
+.screen h2 { font-size:24px; margin-bottom:20px; color:var(--text); }
+.screen h3 { font-size:18px; margin-bottom:14px; }
+
+/* ===== Home ===== */
+.activity-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:20px; }
+.activity-card { background:var(--card); border-radius:var(--radius); padding:28px 24px; text-align:center; box-shadow:var(--shadow); cursor:pointer; transition:all .3s; border-top:4px solid var(--primary); }
+.activity-card:hover { transform:translateY(-6px); box-shadow:0 8px 25px rgba(108,99,255,0.25); }
+.activity-card .icon { font-size:48px; margin-bottom:14px; }
+.activity-card h3 { font-size:17px; margin-bottom:6px; }
+.activity-card p { color:var(--text-light); font-size:13px; }
+
+/* ===== Word Explorer ===== */
+.search-bar { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.search-bar input { flex:1; min-width:200px; }
+.family-filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+.family-filters button { padding:6px 12px; font-size:12px; border-radius:20px; background:#E8E6FF; color:var(--primary); font-weight:600; }
+.family-filters button.active { background:var(--primary); color:#fff; }
+.level-bar { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:16px; }
+.level-bar button { padding:8px 16px; font-size:13px; border-radius:20px; background:#E8E6FF; color:var(--primary); font-weight:700; }
+.level-bar button.active { background:var(--primary); color:#fff; }
+.level-filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+.level-filters button { padding:6px 14px; font-size:12px; border-radius:20px; font-weight:600; }
+.word-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; }
+.word-card { background:var(--card); border-radius:14px; padding:20px 16px; text-align:center; box-shadow:0 3px 12px rgba(0,0,0,0.08); cursor:pointer; transition:all .2s; position:relative; border-left:4px solid var(--primary); }
+.word-card:hover { transform:translateY(-3px); box-shadow:0 6px 20px rgba(0,0,0,0.12); }
+.word-card .word { font-size:32px; font-weight:800; margin-bottom:6px; }
+.word-card .korean { font-size:13px; color:var(--text-light); margin-bottom:8px; }
+.word-card .family { font-size:11px; background:#F0EEFF; color:var(--primary); padding:3px 10px; border-radius:12px; display:inline-block; }
+.word-card .play-btn { position:absolute; top:10px; right:10px; width:32px; height:32px; border-radius:50%; background:var(--primary); color:#fff; font-size:14px; display:flex; align-items:center; justify-content:center; padding:0; }
+.word-card.vowel-a { border-left-color:var(--vowel-a); }
+.word-card.vowel-i { border-left-color:var(--vowel-i); }
+.word-card.vowel-o { border-left-color:var(--vowel-o); }
+.word-card.vowel-u { border-left-color:var(--vowel-u); }
+.word-card.vowel-e { border-left-color:var(--vowel-e); }
+
+/* ===== Game Area ===== */
+.game-container { max-width:600px; margin:0 auto; text-align:center; }
+.game-status { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding:16px 24px; background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); }
+.game-status .score { font-size:24px; font-weight:800; color:var(--primary); }
+.game-status .round { color:var(--text-light); font-weight:600; }
+.game-question { background:var(--card); border-radius:var(--radius); padding:40px; margin-bottom:24px; box-shadow:var(--shadow); }
+.game-question .prompt { font-size:18px; color:var(--text-light); margin-bottom:16px; }
+.game-question .big-word { font-size:56px; font-weight:800; color:var(--primary); }
+.game-options { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.game-options button { padding:24px; font-size:32px; font-weight:700; background:var(--card); border:3px solid #E0E0E0; border-radius:var(--radius); color:var(--text); }
+.game-options button:hover { border-color:var(--primary); background:#F8F7FF; }
+.game-options button.correct { background:#D4EDDA; border-color:var(--success); color:var(--success); }
+.game-options button.wrong { background:#F8D7DA; border-color:var(--warning); color:var(--warning); }
+.game-result { background:var(--card); border-radius:var(--radius); padding:40px; box-shadow:var(--shadow); }
+.game-result h3 { font-size:28px; margin-bottom:16px; }
+.game-result .big-score { font-size:64px; font-weight:800; color:var(--primary); }
+
+/* ===== Spelling ===== */
+.spell-input { font-size:36px; text-align:center; width:200px; font-weight:700; letter-spacing:4px; text-transform:lowercase; }
+.hint-text { color:var(--accent); font-size:14px; margin-top:8px; min-height:22px; font-weight:600; }
+
+/* ===== I Spy ===== */
+.letter-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; max-width:400px; margin:20px auto; }
+.letter-cell { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; background:var(--card); border-radius:12px; cursor:pointer; border:3px solid #E0E0E0; transition:all .2s; text-transform:uppercase; }
+.letter-cell:hover { border-color:var(--primary); transform:scale(1.05); }
+.letter-cell.found { background:var(--success); color:#fff; border-color:var(--success); }
+.letter-cell.wrong-tap { animation:shake .3s; }
+.target-letter { font-size:72px; font-weight:800; color:var(--primary); margin:16px 0; }
+
+/* ===== Progress ===== */
+.progress-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
+.progress-card { background:var(--card); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); text-align:center; }
+.progress-card .value { font-size:36px; font-weight:800; color:var(--primary); }
+.progress-card .label { font-size:13px; color:var(--text-light); margin-top:4px; }
+.progress-bar-bg { background:#E8E6FF; border-radius:10px; height:12px; overflow:hidden; margin-top:8px; }
+.progress-bar-fill { background:linear-gradient(90deg,var(--primary),var(--secondary)); height:100%; border-radius:10px; transition:width .5s; }
+.history-table { width:100%; border-collapse:collapse; background:var(--card); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); }
+.history-table th { background:var(--primary); color:#fff; padding:12px 16px; text-align:left; font-size:13px; }
+.history-table td { padding:10px 16px; border-bottom:1px solid #F0F0F0; font-size:13px; }
+
+/* ===== Teacher ===== */
+.teacher-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+.student-card { background:var(--card); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+.student-card .name { font-size:18px; font-weight:700; margin-bottom:4px; }
+.student-card .username { font-size:13px; color:var(--text-light); margin-bottom:12px; }
+.student-card .actions { display:flex; gap:8px; margin-top:12px; }
+.add-form { background:var(--card); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); margin-bottom:24px; }
+.add-form .form-row { display:flex; gap:12px; flex-wrap:wrap; align-items:end; }
+.add-form .form-row input { flex:1; min-width:150px; }
+.add-form label { display:block; font-size:13px; color:var(--text-light); margin-bottom:4px; font-weight:600; }
+
+/* ===== Animations ===== */
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pop { 0%{transform:scale(0.8);opacity:0} 100%{transform:scale(1);opacity:1} }
+.fade-in { animation:fadeIn .3s ease; }
+.pop-in { animation:pop .3s ease; }
+
+/* ===== Review Mode ===== */
+.review-section { margin-top:32px; }
+.review-section h2 { color:var(--primary); margin-bottom:16px; }
+.review-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; }
+.review-card { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); border-radius:var(--radius); padding:14px 12px; text-align:center; box-shadow:var(--shadow); cursor:pointer; transition:all .3s; color:#fff; }
+.review-card:hover { transform:translateY(-5px); box-shadow:0 8px 25px rgba(118,75,162,0.35); }
+.review-num { font-size:32px; font-weight:800; line-height:1; }
+.review-sub { font-size:11px; opacity:0.75; margin:2px 0; }
+.review-words { font-size:12px; opacity:0.85; }
+.review-choice { display:flex; gap:16px; justify-content:center; margin-top:24px; flex-wrap:wrap; }
+.review-choice button { font-size:18px; padding:18px 36px; font-weight:700; }
+.review-info { text-align:center; margin:20px 0; }
+.review-info .word-count { font-size:48px; font-weight:800; color:var(--primary); }
+.review-info p { color:var(--text-light); margin-top:4px; }
+
+/* ===== Responsive ===== */
+@media(max-width:768px) {
+    nav { padding:0 12px; height:auto; flex-wrap:wrap; padding-bottom:8px; }
+    nav .nav-links { order:3; width:100%; }
+    .screen { padding:16px; }
+    .game-options { grid-template-columns:1fr; }
+    .word-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); }
+    .letter-grid { grid-template-columns:repeat(5,1fr); }
+    .review-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
+    .review-card { padding:14px 10px; }
+    .review-num { font-size:26px; }
+    .review-sub { font-size:10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Login Screen ===== -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>Hooked on Phonics</h1>
+    <p>파닉스 학습 프로그램에 오신 것을 환영합니다</p>
+    <div class="login-error" id="login-error"></div>
+    <input type="text" id="login-username" placeholder="아이디" autocomplete="username">
+    <input type="password" id="login-password" placeholder="비밀번호" autocomplete="current-password">
+    <button class="btn-primary" onclick="doLogin()">로그인</button>
+    <p style="margin-top:16px;font-size:12px;color:#999">선생님 첫 로그인: teacher / teacher1234</p>
+  </div>
+</div>
+
+<!-- ===== Main App ===== -->
+<div id="app" class="hidden">
+  <nav>
+    <div class="logo">Phonics</div>
+    <div class="nav-links" id="nav-links"></div>
+    <div class="user-info">
+      <span id="user-display"></span>
+      <button class="btn-outline btn-sm" onclick="doLogout()">로그아웃</button>
+    </div>
+  </nav>
+
+  <!-- Home -->
+  <div id="screen-home" class="screen">
+    <h2>학습 활동</h2>
+    <div class="activity-grid">
+      <div class="activity-card" onclick="showScreen('words')" style="border-top-color:var(--primary)">
+        <div class="icon">ABC</div><h3>단어 탐색기</h3><p>190개 단어 학습하기</p>
+      </div>
+      <div class="activity-card" onclick="showScreen('gameshow')" style="border-top-color:var(--secondary)">
+        <div class="icon">?!</div><h3>듣기 퀴즈</h3><p>발음 듣고 단어 맞추기</p>
+      </div>
+      <div class="activity-card" onclick="showScreen('spelling')" style="border-top-color:var(--success)">
+        <div class="icon">Aa</div><h3>스펠링 퀴즈</h3><p>뜻 보고 영어 단어 쓰기</p>
+      </div>
+      <div class="activity-card" onclick="showScreen('ispy')" style="border-top-color:var(--accent)">
+        <div class="icon">ab</div><h3>글자 찾기</h3><p>알파벳 찾기 게임</p>
+      </div>
+      <div class="activity-card" onclick="showScreen('progress')" style="border-top-color:var(--vowel-i)">
+        <div class="icon">99</div><h3>내 진도</h3><p>학습 현황 확인</p>
+      </div>
+    </div>
+
+    <!-- Review Mode Section -->
+    <div class="review-section">
+      <h2>복습 모드</h2>
+      <div class="review-grid" id="review-grid"></div>
+    </div>
+  </div>
+
+  <!-- Review Mode -->
+  <div id="screen-review" class="screen">
+    <h2 id="review-title">복습</h2>
+    <div class="game-container">
+      <div class="review-info">
+        <div class="word-count" id="review-word-count">0</div>
+        <p>단어 셔플 복습</p>
+      </div>
+      <div class="review-choice">
+        <button class="btn-secondary" style="font-size:18px;padding:18px 36px;font-weight:700" onclick="startReviewGameShow()">?! 듣기 퀴즈</button>
+        <button class="btn-success" style="font-size:18px;padding:18px 36px;font-weight:700" onclick="startReviewSpelling()">Aa 스펠링 퀴즈</button>
+      </div>
+      <div style="text-align:center;margin-top:20px">
+        <button class="btn-outline" onclick="showScreen('home')">홈으로 돌아가기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Word Explorer -->
+  <div id="screen-words" class="screen">
+    <h2>단어 탐색기</h2>
+    <div class="search-bar">
+      <input type="text" id="word-search" placeholder="단어 검색..." oninput="filterWords()">
+      <select id="level-select" onchange="filterWords()" style="padding:12px;border-radius:10px;border:2px solid #E0E0E0">
+        <option value="all">전체 레벨</option>
+        <option value="1">Level 1 - 초급A</option>
+        <option value="2">Level 2 - 초급B</option>
+        <option value="3">Level 3 - 중급A</option>
+        <option value="4">Level 4 - 중급B</option>
+        <option value="5">Level 5 - 고급A</option>
+        <option value="6">Level 6 - 고급B</option>
+      </select>
+    </div>
+    <div class="family-filters" id="family-filters"></div>
+    <div class="word-grid" id="word-grid"></div>
+  </div>
+
+  <!-- Game Show (Listening Quiz) -->
+  <div id="screen-gameshow" class="screen">
+    <h2>듣기 퀴즈</h2>
+    <div class="game-container">
+      <div id="gs-play">
+        <div class="level-bar" id="gs-level-bar"></div>
+        <div id="gs-start-btn" style="text-align:center;margin-bottom:20px">
+          <div class="game-question">
+            <p class="prompt">발음을 듣고 올바른 단어를 고르세요!</p>
+            <button class="btn-primary" style="font-size:18px;padding:16px 48px;margin-top:16px" onclick="startGameShow()">게임 시작!</button>
+          </div>
+        </div>
+        <div id="gs-playing" class="hidden">
+        <div class="game-status">
+          <div class="round" id="gs-round">1 / 10</div>
+          <div class="score" id="gs-score">0점</div>
+        </div>
+        <div class="game-question">
+          <p class="prompt">이 단어는 무엇일까요?</p>
+          <button class="btn-primary" style="font-size:20px;padding:14px 32px;margin:16px 0" onclick="speakCurrent()">&#128264; 듣기</button>
+        </div>
+        <div class="game-options" id="gs-options"></div>
+      </div></div>
+      <div id="gs-result" class="hidden">
+        <div class="game-result">
+          <h3>게임 결과</h3>
+          <div class="big-score" id="gs-final-score">0</div>
+          <p style="margin:12px 0;color:var(--text-light)" id="gs-final-msg"></p>
+          <button class="btn-primary" style="margin:8px" onclick="startGameShow()">다시 하기</button>
+          <button class="btn-outline" style="margin:8px" onclick="showScreen('home')">홈으로</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spelling Quiz -->
+  <div id="screen-spelling" class="screen">
+    <h2>스펠링 퀴즈</h2>
+    <div class="game-container">
+      <div id="sp-play">
+        <div class="level-bar" id="sp-level-bar"></div>
+        <div id="sp-start-btn" style="text-align:center;margin-bottom:20px">
+          <div class="game-question">
+            <p class="prompt">한국어 뜻을 보고 영어 단어를 입력하세요!</p>
+            <button class="btn-primary" style="font-size:18px;padding:16px 48px;margin-top:16px" onclick="startSpelling()">시작!</button>
+          </div>
+        </div>
+        <div id="sp-playing" class="hidden">
+        <div class="game-status">
+          <div class="round" id="sp-round">1 / 10</div>
+          <div class="score" id="sp-score">0점</div>
+        </div>
+        <div class="game-question">
+          <p class="prompt">이 뜻의 영어 단어를 입력하세요</p>
+          <div class="big-word" id="sp-korean">고양이</div>
+          <div class="hint-text" id="sp-hint"></div>
+        </div>
+        <div style="margin:20px 0">
+          <input type="text" class="spell-input" id="sp-input" maxlength="5" autocomplete="off" autofocus>
+        </div>
+        <button class="btn-primary" style="margin:4px" onclick="checkSpelling()">확인</button>
+        <button class="btn-outline" style="margin:4px" onclick="showSpellingHint()">힌트</button>
+      </div></div>
+      <div id="sp-result" class="hidden">
+        <div class="game-result">
+          <h3>스펠링 결과</h3>
+          <div class="big-score" id="sp-final-score">0</div>
+          <p style="margin:12px 0;color:var(--text-light)" id="sp-final-msg"></p>
+          <button class="btn-primary" style="margin:8px" onclick="startSpelling()">다시 하기</button>
+          <button class="btn-outline" style="margin:8px" onclick="showScreen('home')">홈으로</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- I Spy -->
+  <div id="screen-ispy" class="screen">
+    <h2>글자 찾기</h2>
+    <div class="game-container">
+      <div id="is-start">
+        <div class="game-question">
+          <p class="prompt">알파벳 글자를 찾아보세요!</p>
+          <button class="btn-primary" style="font-size:18px;padding:16px 48px" onclick="startISpy()">시작!</button>
+        </div>
+      </div>
+      <div id="is-play" class="hidden">
+        <div class="game-status">
+          <div class="round" id="is-round">1 / 5</div>
+          <div class="score" id="is-score">0점</div>
+        </div>
+        <p style="font-size:16px;margin-bottom:8px">이 글자를 모두 찾으세요!</p>
+        <div class="target-letter" id="is-target">A</div>
+        <p style="color:var(--text-light);margin-bottom:8px">남은 개수: <strong id="is-remaining">0</strong></p>
+        <div class="letter-grid" id="is-grid"></div>
+      </div>
+      <div id="is-result" class="hidden">
+        <div class="game-result">
+          <h3>글자 찾기 결과</h3>
+          <div class="big-score" id="is-final-score">0</div>
+          <p style="margin:12px 0;color:var(--text-light)" id="is-final-msg"></p>
+          <button class="btn-primary" style="margin:8px" onclick="startISpy()">다시 하기</button>
+          <button class="btn-outline" style="margin:8px" onclick="showScreen('home')">홈으로</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Progress -->
+  <div id="screen-progress" class="screen">
+    <h2>내 학습 현황</h2>
+    <div class="progress-cards" id="progress-summary"></div>
+    <h3>최근 학습 기록</h3>
+    <table class="history-table">
+      <thead><tr><th>활동</th><th>정답</th><th>총 문제</th><th>점수</th><th>날짜</th></tr></thead>
+      <tbody id="progress-history"></tbody>
+    </table>
+  </div>
+
+  <!-- Teacher: Dashboard -->
+  <div id="screen-teacher" class="screen">
+    <h2>학생 관리</h2>
+    <div class="add-form">
+      <h3>새 학생 추가</h3>
+      <div class="form-row">
+        <div><label>이름</label><input type="text" id="new-name" placeholder="홍길동"></div>
+        <div><label>아이디</label><input type="text" id="new-username" placeholder="student1"></div>
+        <div><label>비밀번호</label><input type="text" id="new-password" placeholder="1234"></div>
+        <div style="padding-top:20px"><button class="btn-primary" onclick="addStudent()">추가</button></div>
+      </div>
+    </div>
+    <div class="teacher-grid" id="student-list"></div>
+  </div>
+
+  <!-- Teacher: Student Detail -->
+  <div id="screen-student-detail" class="screen">
+    <button class="btn-outline btn-sm" onclick="showScreen('teacher')" style="margin-bottom:16px">< 학생 목록</button>
+    <h2 id="sd-name">학생 이름</h2>
+    <div class="progress-cards" id="sd-summary"></div>
+    <h3>학습 기록</h3>
+    <table class="history-table">
+      <thead><tr><th>활동</th><th>단어</th><th>정답/총</th><th>정답률</th><th>점수</th><th>날짜/시간</th></tr></thead>
+      <tbody id="sd-history"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ===== Korean Dictionary (190 CVC words) =====
+const KOREAN = {
+  bat:'박쥐',cat:'고양이',fat:'뚱뚱한',hat:'모자',mat:'매트',pat:'쓰다듬다',rat:'쥐',sat:'앉았다',
+  can:'캔',fan:'선풍기',man:'남자',pan:'냄비',ran:'달렸다',tan:'갈색',van:'밴(차)',
+  cap:'모자(캡)',gap:'틈',lap:'무릎',map:'지도',nap:'낮잠',rap:'랩',sap:'수액',tap:'두드리다',yap:'짖다',zap:'쏘다',
+  bag:'가방',gag:'재갈',hag:'노파',lag:'뒤처지다',nag:'잔소리',rag:'넝마',sag:'처지다',tag:'꼬리표',wag:'흔들다',
+  bad:'나쁜',dad:'아빠',had:'가졌다',lad:'소년',mad:'화난',pad:'메모장',sad:'슬픈',tad:'조금',
+  cab:'택시',jab:'찌르다',lab:'실험실',nab:'잡다',tab:'탭',
+  dam:'댐',ham:'햄',jam:'잼',ram:'숫양',yam:'고구마',
+  fax:'팩스',wax:'밀랍',
+  big:'큰',dig:'파다',fig:'무화과',pig:'돼지',rig:'장비',wig:'가발',
+  bid:'입찰',did:'했다',hid:'숨었다',kid:'아이',lid:'뚜껑',rid:'제거하다',
+  bit:'조금',fit:'맞다',hit:'치다',kit:'도구세트',lit:'불켰다',pit:'구덩이',sit:'앉다',wit:'재치',
+  bin:'쓰레기통',fin:'지느러미',kin:'친척',pin:'핀',sin:'죄',tin:'주석',win:'이기다',
+  dip:'담그다',hip:'엉덩이',lip:'입술',nip:'꼬집다',rip:'찢다',sip:'홀짝이다',tip:'끝',zip:'지퍼',
+  bib:'턱받이',fib:'거짓말',rib:'갈비뼈',
+  dim:'어두운',him:'그를',rim:'테두리',
+  fix:'고치다',mix:'섞다',six:'여섯',
+  box:'상자',fox:'여우',
+  cot:'간이침대',dot:'점',got:'얻었다',hot:'뜨거운',lot:'많이',not:'아닌',pot:'냄비',rot:'썩다',tot:'유아',
+  hop:'뛰다',mop:'대걸레',pop:'터지다',sop:'적시다',top:'꼭대기',
+  bog:'늪',dog:'개',fog:'안개',hog:'돼지',jog:'조깅',log:'통나무',
+  cob:'옥수수속대',job:'직업',mob:'군중',rob:'훔치다',sob:'흐느끼다',
+  cod:'대구',nod:'끄덕이다',pod:'꼬투리',rod:'막대',
+  mom:'엄마',
+  bug:'벌레',dug:'팠다',hug:'껴안다',jug:'주전자',mug:'머그컵',rug:'깔개',tug:'잡아당기다',
+  bun:'번(빵)',fun:'재미',nun:'수녀',pun:'말장난',run:'달리다',sun:'태양',
+  cub:'새끼동물',rub:'문지르다',tub:'욕조',
+  but:'그러나',cut:'자르다',gut:'내장',hut:'오두막',nut:'견과류',
+  cup:'컵',pup:'강아지',
+  bud:'꽃봉오리',mud:'진흙',
+  gum:'껌',hum:'콧노래',sum:'합계',
+  bed:'침대',fed:'먹였다',led:'이끌었다',red:'빨간',wed:'결혼하다',
+  jet:'제트기',net:'그물',vet:'수의사',wet:'젖은',
+  den:'굴',hen:'암탉',men:'남자들',pen:'펜',ten:'열',
+  leg:'다리'
+};
+
+// ===== Word Levels =====
+const LEVELS = {
+  1: {name:'Level 1 - 초급A', words:['bat','cat','fat','hat','mat','rat','can','fan','man','pan','van']},
+  2: {name:'Level 2 - 초급B', words:['pat','sat','ran','tan','cap','gap','lap','nap','rap','sap','tap','yap','zap','bag','gag','hag','lag','nag','rag','sag','tag','wag','bad','dad','had','lad','mad','sad']},
+  3: {name:'Level 3 - 중급A', words:['map','pad','cab','ham','jam','pig','wig','big','lid','jab','lab','nab','tab','dam','ram','yam','fax','wax','dig','fig','rig','bid','did','hid','kid','rid','hit','bit','fit','kit','lit','sit','wit']},
+  4: {name:'Level 4 - 중급B', words:['pit','fin','pin','win','lip','rip','zip','bin','kin','sin','tin','dip','hip','nip','sip','tip','bib','fib','rib','dim','him','rim','six','fix','mix','box','fox','dot','cot','got','hot','lot','not','pot','rot','tot','hop','mop','pop','sop','top']},
+  5: {name:'Level 5 - 고급A', words:['dog','bog','fog','hog','jog','log','cob','job','mob','rob','sob','cod','nod','pod','rod','mom','bug','dug','hug','jug','mug','rug','tug','fun','nun','pun','run','sun','cub','rub','tub','bun']},
+  6: {name:'Level 6 - 고급B', words:['cut','nut','cup','pup','but','gut','hut','bud','mud','gum','hum','sum','bed','fed','led','red','wed','jet','net','vet','wet','den','hen','men','pen','ten','leg']}
+};
+
+// ===== Word Families =====
+const FAMILIES = {};
+const ALL_WORDS = [];
+for (const lv of Object.values(LEVELS)) {
+  for (const w of lv.words) {
+    if (!ALL_WORDS.includes(w)) ALL_WORDS.push(w);
+    if (w.length >= 2) {
+      const fam = '-' + w.slice(1);
+      if (!FAMILIES[fam]) FAMILIES[fam] = [];
+      if (!FAMILIES[fam].includes(w)) FAMILIES[fam].push(w);
+    }
+  }
+}
+
+function getWordLevel(w) {
+  for (const [k,v] of Object.entries(LEVELS)) { if (v.words.includes(w)) return parseInt(k); }
+  return 0;
+}
+function getWordFamily(w) { return w.length >= 2 ? '-' + w.slice(1) : ''; }
+function getVowelClass(w) {
+  if (!w) return '';
+  const vowel = w.length >= 2 ? w[w.length-2] : w[0];
+  const map = {a:'vowel-a',i:'vowel-i',o:'vowel-o',u:'vowel-u',e:'vowel-e'};
+  return map[vowel] || '';
+}
+
+// ===== Review Definitions =====
+const REVIEWS = [
+  {id:'r12', label:'R1,2', levels:[1,2]},
+  {id:'r23', label:'R2,3', levels:[2,3]},
+  {id:'r123', label:'R1,2,3', levels:[1,2,3]},
+  {id:'r34', label:'R3,4', levels:[3,4]},
+  {id:'r1234', label:'R1,2,3,4', levels:[1,2,3,4]},
+  {id:'r45', label:'R4,5', levels:[4,5]},
+  {id:'r345', label:'R3,4,5', levels:[3,4,5]},
+  {id:'r12345', label:'R1,2,3,4,5', levels:[1,2,3,4,5]},
+  {id:'r56', label:'R5,6', levels:[5,6]},
+  {id:'r456', label:'R4,5,6', levels:[4,5,6]},
+  {id:'r123456', label:'R1,2,3,4,5,6', levels:[1,2,3,4,5,6]},
+];
+
+// ===== App State =====
+let currentUser = null;
+let currentScreen = 'home';
+let assets = {};
+let hasMedia = {images:false, audio:false};
+let reviewMode = null; // null=일반, {levels:[], label:''} = 복습
+
+// ===== TTS (mp3 파일 기반, 모바일 100% 호환) =====
+let ttsAudio = null;
+
+function speak(word) {
+  const w = word.toLowerCase().trim();
+  if (ttsAudio) { ttsAudio.pause(); ttsAudio.currentTime = 0; }
+  ttsAudio = new Audio(`/static/audio/words/${w}.mp3`);
+  ttsAudio.play().catch(() => {
+    // mp3 없으면 Web Speech API 폴백
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(w);
+      u.lang = 'en-US'; u.rate = 0.75; u.pitch = 1.1;
+      window.speechSynthesis.speak(u);
+    }
+  });
+}
+
+// ===== Auth =====
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  if (!username || !password) { errEl.textContent = '아이디와 비밀번호를 입력하세요'; return; }
+  try {
+    const res = await fetch('/api/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username, password})
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; return; }
+    currentUser = data;
+    errEl.textContent = '';
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    setupNav();
+    showScreen('home');
+    loadMediaInfo();
+  } catch(e) { errEl.textContent = '서버 연결 실패'; }
+}
+
+async function doLogout() {
+  await fetch('/api/logout', {method:'POST'});
+  currentUser = null;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-password').value = '';
+}
+
+async function checkSession() {
+  try {
+    const res = await fetch('/api/me');
+    const data = await res.json();
+    if (data.logged_in) {
+      currentUser = data;
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      setupNav();
+      showScreen('home');
+      loadMediaInfo();
+    }
+  } catch(e) {}
+}
+
+async function loadMediaInfo() {
+  try {
+    const res = await fetch('/api/has-media');
+    hasMedia = await res.json();
+  } catch(e) {}
+}
+
+// ===== Navigation =====
+function setupNav() {
+  const nav = document.getElementById('nav-links');
+  const userDisp = document.getElementById('user-display');
+  userDisp.textContent = `${currentUser.name} (${currentUser.role === 'teacher' ? '선생님' : '학생'})`;
+
+  let links = [];
+  if (currentUser.role === 'teacher') {
+    links = [
+      {id:'home',label:'홈'},{id:'words',label:'단어 탐색기'},{id:'teacher',label:'학생 관리'}
+    ];
+  } else {
+    links = [
+      {id:'home',label:'홈'},{id:'words',label:'단어 탐색기'},{id:'gameshow',label:'듣기 퀴즈'},
+      {id:'spelling',label:'스펠링'},{id:'ispy',label:'글자 찾기'},{id:'progress',label:'내 진도'}
+    ];
+  }
+  nav.innerHTML = links.map(l =>
+    `<button onclick="showScreen('${l.id}')" data-screen="${l.id}">${l.label}</button>`
+  ).join('');
+}
+
+function showScreen(id) {
+  currentScreen = id;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const screen = document.getElementById('screen-' + id);
+  if (screen) { screen.classList.add('active'); screen.classList.add('fade-in'); }
+  document.querySelectorAll('.nav-links button').forEach(b => {
+    b.classList.toggle('active', b.dataset.screen === id);
+  });
+  if (id === 'home') { reviewMode = null; renderReviewGrid(); }
+  if (id === 'words') renderWordExplorer();
+  if (id === 'gameshow') renderLevelBar('gs-level-bar', gsLevel, 'changeGsLevel');
+  if (id === 'spelling') renderLevelBar('sp-level-bar', spLevel, 'changeSpLevel');
+  if (id === 'progress') loadProgress();
+  if (id === 'teacher') loadStudents();
+}
+
+// ===== Word Explorer =====
+let selectedFamily = 'all';
+function renderWordExplorer() {
+  // Family filters
+  const ff = document.getElementById('family-filters');
+  const sortedFams = Object.keys(FAMILIES).sort();
+  ff.innerHTML = `<button class="${selectedFamily==='all'?'active':''}" onclick="selectedFamily='all';filterWords()">전체</button>` +
+    sortedFams.map(f => `<button class="${selectedFamily===f?'active':''}" onclick="selectedFamily='${f}';filterWords()">${f} (${FAMILIES[f].length})</button>`).join('');
+  filterWords();
+}
+
+function filterWords() {
+  const query = document.getElementById('word-search').value.toLowerCase().trim();
+  const level = document.getElementById('level-select').value;
+  let words = [...ALL_WORDS];
+
+  if (query) words = words.filter(w => w.includes(query) || (KOREAN[w]||'').includes(query));
+  if (level !== 'all') words = words.filter(w => getWordLevel(w) === parseInt(level));
+  if (selectedFamily !== 'all') words = words.filter(w => getWordFamily(w) === selectedFamily);
+
+  const grid = document.getElementById('word-grid');
+  grid.innerHTML = words.map(w => `
+    <div class="word-card ${getVowelClass(w)}" onclick="speak('${w}')">
+      <button class="play-btn" onclick="event.stopPropagation();speak('${w}')">&#9654;</button>
+      <div class="word">${w}</div>
+      <div class="korean">${KOREAN[w]||''}</div>
+      <div class="family">${getWordFamily(w)}</div>
+    </div>
+  `).join('');
+
+  // Update family filter active state
+  document.querySelectorAll('.family-filters button').forEach(b => {
+    const f = b.textContent.split(' ')[0];
+    b.classList.toggle('active', f === '전체' ? selectedFamily==='all' : selectedFamily === f);
+  });
+}
+
+// ===== Level Bar =====
+let gsLevel = 'all', spLevel = 'all';
+function renderLevelBar(barId, currentLevel, callback) {
+  const bar = document.getElementById(barId);
+  const levels = [{v:'all',l:'전체'},{v:'1',l:'Lv1'},{v:'2',l:'Lv2'},{v:'3',l:'Lv3'},{v:'4',l:'Lv4'},{v:'5',l:'Lv5'},{v:'6',l:'Lv6'}];
+  bar.innerHTML = levels.map(lv =>
+    `<button class="${currentLevel===lv.v?'active':''}" onclick="${callback}('${lv.v}')">${lv.l}</button>`
+  ).join('');
+}
+
+// ===== Game Show (Listening Quiz) =====
+let gsState = {};
+function changeGsLevel(lv) {
+  gsLevel = lv;
+  renderLevelBar('gs-level-bar', gsLevel, 'changeGsLevel');
+  document.getElementById('gs-start-btn').classList.remove('hidden');
+  document.getElementById('gs-playing').classList.add('hidden');
+  document.getElementById('gs-result').classList.add('hidden');
+}
+function startGameShow() {
+  let pool = gsLevel === 'all' ? [...ALL_WORDS] : [...(LEVELS[gsLevel]?.words || ALL_WORDS)];
+  if (pool.length < 4) pool = [...ALL_WORDS];
+  shuffle(pool);
+
+  gsState = { pool, questions: pool.slice(0, 10), current: 0, score: 0, total: Math.min(10, pool.length) };
+  renderLevelBar('gs-level-bar', gsLevel, 'changeGsLevel');
+  document.getElementById('gs-start-btn').classList.add('hidden');
+  document.getElementById('gs-result').classList.add('hidden');
+  document.getElementById('gs-playing').classList.remove('hidden');
+  nextGameShowQuestion();
+}
+
+function nextGameShowQuestion() {
+  if (gsState.current >= gsState.total) { endGameShow(); return; }
+  const word = gsState.questions[gsState.current];
+  document.getElementById('gs-round').textContent = `${gsState.current+1} / ${gsState.total}`;
+  document.getElementById('gs-score').textContent = `${gsState.score}점`;
+
+  // Generate 4 options (1 correct + 3 distractors)
+  let distractors;
+  if (gsState.isReview) {
+    // 복습 모드: 다른 모음 단어로 오답 구성 (음가 비교)
+    const wordVowel = getWordVowel(word);
+    distractors = gsState.pool.filter(w => w !== word && getWordVowel(w) !== wordVowel);
+    if (distractors.length < 3) {
+      distractors = gsState.pool.filter(w => w !== word);
+    }
+  } else {
+    const family = getWordFamily(word);
+    distractors = (FAMILIES[family] || ALL_WORDS).filter(w => w !== word);
+    if (distractors.length < 3) {
+      distractors = ALL_WORDS.filter(w => w !== word);
+    }
+  }
+  shuffle(distractors);
+  const options = [word, ...distractors.slice(0, 3)];
+  shuffle(options);
+
+  const optDiv = document.getElementById('gs-options');
+  optDiv.innerHTML = options.map(o =>
+    `<button onclick="gsAnswer(this,'${o}','${word}')">${o}</button>`
+  ).join('');
+
+  setTimeout(() => speak(word), 300);
+}
+
+function speakCurrent() {
+  if (gsState.questions && gsState.current < gsState.total) {
+    speak(gsState.questions[gsState.current]);
+  }
+}
+
+function gsAnswer(btn, selected, correct) {
+  const buttons = document.querySelectorAll('#gs-options button');
+  buttons.forEach(b => { b.disabled = true; if (b.textContent === correct) b.classList.add('correct'); });
+  if (selected === correct) {
+    gsState.score += 10;
+  } else {
+    btn.classList.add('wrong');
+  }
+  gsState.current++;
+  setTimeout(nextGameShowQuestion, 1000);
+}
+
+function endGameShow() {
+  document.getElementById('gs-play').classList.add('hidden');
+  document.getElementById('gs-result').classList.remove('hidden');
+  const pct = Math.round((gsState.score / (gsState.total * 10)) * 100);
+  document.getElementById('gs-final-score').textContent = `${gsState.score} / ${gsState.total * 10}`;
+  document.getElementById('gs-final-msg').textContent =
+    pct >= 80 ? '훌륭해요! 완벽에 가까워요!' : pct >= 50 ? '잘했어요! 조금 더 연습해봐요!' : '힘내세요! 다시 도전해봐요!';
+  let gsLabelName;
+  if (reviewMode) {
+    gsLabelName = `복습 듣기 (${reviewMode.label})`;
+  } else {
+    gsLabelName = `듣기 퀴즈 (${gsLevel === 'all' ? '전체' : 'Lv'+gsLevel})`;
+  }
+  saveResult(gsLabelName, gsState.score / 10, gsState.total, gsState.score);
+  reviewMode = null;
+}
+
+// ===== Spelling Quiz =====
+let spState = {};
+function changeSpLevel(lv) {
+  spLevel = lv;
+  renderLevelBar('sp-level-bar', spLevel, 'changeSpLevel');
+  document.getElementById('sp-start-btn').classList.remove('hidden');
+  document.getElementById('sp-playing').classList.add('hidden');
+  document.getElementById('sp-result').classList.add('hidden');
+}
+function startSpelling() {
+  let pool = spLevel === 'all' ? ALL_WORDS.filter(w => KOREAN[w]) : (LEVELS[spLevel]?.words || []).filter(w => KOREAN[w]);
+  if (pool.length < 4) pool = ALL_WORDS.filter(w => KOREAN[w]);
+  shuffle(pool);
+
+  spState = { pool, questions: pool.slice(0, 10), current: 0, score: 0, total: Math.min(10, pool.length), hints: 0 };
+  renderLevelBar('sp-level-bar', spLevel, 'changeSpLevel');
+  document.getElementById('sp-start-btn').classList.add('hidden');
+  document.getElementById('sp-result').classList.add('hidden');
+  document.getElementById('sp-playing').classList.remove('hidden');
+  nextSpellingQuestion();
+}
+
+function nextSpellingQuestion() {
+  if (spState.current >= spState.total) { endSpelling(); return; }
+  const word = spState.questions[spState.current];
+  document.getElementById('sp-round').textContent = `${spState.current+1} / ${spState.total}`;
+  document.getElementById('sp-score').textContent = `${spState.score}점`;
+  document.getElementById('sp-korean').textContent = KOREAN[word] || word;
+  document.getElementById('sp-hint').textContent = '';
+  document.getElementById('sp-input').value = '';
+  document.getElementById('sp-input').focus();
+  spState.hints = 0;
+}
+
+function showSpellingHint() {
+  const word = spState.questions[spState.current];
+  spState.hints++;
+  if (spState.hints === 1) {
+    document.getElementById('sp-hint').textContent = `힌트: ${word[0]}${'_'.repeat(word.length-1)} (${word.length}글자)`;
+  } else if (spState.hints === 2) {
+    document.getElementById('sp-hint').textContent = `힌트: "${getWordFamily(word)}" 패밀리`;
+  } else {
+    document.getElementById('sp-hint').textContent = `정답: ${word}`;
+  }
+}
+
+function checkSpelling() {
+  const word = spState.questions[spState.current];
+  const input = document.getElementById('sp-input').value.trim().toLowerCase();
+  const hintEl = document.getElementById('sp-hint');
+
+  if (!input) { hintEl.textContent = '단어를 입력하세요!'; return; }
+  if (input === word) {
+    const points = Math.max(10 - spState.hints * 3, 4);
+    spState.score += points;
+    hintEl.innerHTML = `<span style="color:var(--success)">정답! +${points}점</span>`;
+    speak(word);
+  } else {
+    hintEl.innerHTML = `<span style="color:var(--warning)">오답! 정답: ${word}</span>`;
+  }
+  spState.current++;
+  setTimeout(nextSpellingQuestion, 1200);
+}
+
+function endSpelling() {
+  document.getElementById('sp-play').classList.add('hidden');
+  document.getElementById('sp-result').classList.remove('hidden');
+  const max = spState.total * 10;
+  document.getElementById('sp-final-score').textContent = `${spState.score} / ${max}`;
+  const pct = Math.round((spState.score / max) * 100);
+  document.getElementById('sp-final-msg').textContent =
+    pct >= 80 ? '스펠링 달인이에요!' : pct >= 50 ? '좋아요! 꾸준히 연습해요!' : '연습이 실력을 만들어요!';
+  let spLabelName;
+  if (reviewMode) {
+    spLabelName = `복습 스펠링 (${reviewMode.label})`;
+  } else {
+    spLabelName = `스펠링 퀴즈 (${spLevel === 'all' ? '전체' : 'Lv'+spLevel})`;
+  }
+  saveResult(spLabelName, Math.round(spState.score/10), spState.total, spState.score);
+  reviewMode = null;
+}
+
+// Enter key for spelling
+document.addEventListener('keydown', e => {
+  if (currentScreen === 'spelling' && e.key === 'Enter' && !document.getElementById('sp-play').classList.contains('hidden')) {
+    checkSpelling();
+  }
+});
+
+// ===== I Spy =====
+let isState = {};
+function startISpy() {
+  const letters = 'abcdefghijklmnopqrstuvwxyz';
+  const targets = [];
+  while (targets.length < 5) {
+    const l = letters[Math.floor(Math.random() * 26)];
+    if (!targets.includes(l)) targets.push(l);
+  }
+  isState = { targets, current: 0, score: 0, total: 5 };
+  document.getElementById('is-start').classList.add('hidden');
+  document.getElementById('is-result').classList.add('hidden');
+  document.getElementById('is-play').classList.remove('hidden');
+  nextISpyRound();
+}
+
+function nextISpyRound() {
+  if (isState.current >= isState.total) { endISpy(); return; }
+  const target = isState.targets[isState.current];
+  document.getElementById('is-round').textContent = `${isState.current+1} / ${isState.total}`;
+  document.getElementById('is-score').textContent = `${isState.score}점`;
+  document.getElementById('is-target').textContent = target.toUpperCase();
+
+  // Generate grid: 36 cells, 4-6 are target letter
+  const count = 4 + Math.floor(Math.random() * 3); // 4-6 targets
+  isState.targetCount = count;
+  isState.found = 0;
+  document.getElementById('is-remaining').textContent = count;
+
+  const grid = [];
+  const letters = 'abcdefghijklmnopqrstuvwxyz';
+  // Place targets randomly
+  const positions = new Set();
+  while (positions.size < count) positions.add(Math.floor(Math.random() * 36));
+  for (let i = 0; i < 36; i++) {
+    if (positions.has(i)) {
+      grid.push(target);
+    } else {
+      let l;
+      do { l = letters[Math.floor(Math.random() * 26)]; } while (l === target);
+      grid.push(l);
+    }
+  }
+
+  const gridEl = document.getElementById('is-grid');
+  gridEl.innerHTML = grid.map((l, i) =>
+    `<div class="letter-cell" data-letter="${l}" data-idx="${i}" onclick="ispyClick(this,'${l}','${target}')">${l}</div>`
+  ).join('');
+
+  speak(target);
+}
+
+function ispyClick(el, letter, target) {
+  if (el.classList.contains('found')) return;
+  if (letter === target) {
+    el.classList.add('found');
+    isState.found++;
+    isState.score += 5;
+    document.getElementById('is-score').textContent = `${isState.score}점`;
+    document.getElementById('is-remaining').textContent = isState.targetCount - isState.found;
+    if (isState.found >= isState.targetCount) {
+      isState.current++;
+      setTimeout(nextISpyRound, 600);
+    }
+  } else {
+    el.classList.add('wrong-tap');
+    isState.score = Math.max(0, isState.score - 2);
+    document.getElementById('is-score').textContent = `${isState.score}점`;
+    setTimeout(() => el.classList.remove('wrong-tap'), 300);
+  }
+}
+
+function endISpy() {
+  document.getElementById('is-play').classList.add('hidden');
+  document.getElementById('is-result').classList.remove('hidden');
+  document.getElementById('is-final-score').textContent = `${isState.score}점`;
+  document.getElementById('is-final-msg').textContent =
+    isState.score >= 100 ? '눈이 매처럼 빠르네요!' : isState.score >= 60 ? '잘했어요!' : '다시 도전해봐요!';
+  saveResult('글자 찾기', isState.current, isState.total, isState.score);
+}
+
+// ===== Review Mode =====
+function renderReviewGrid() {
+  const grid = document.getElementById('review-grid');
+  if (!grid) return;
+  grid.innerHTML = REVIEWS.map((r, i) => {
+    const wordCount = getReviewWords(r.levels).length;
+    return `<div class="review-card" onclick="startReview(${JSON.stringify(r.levels)},'${r.label}')">
+      <div class="review-num">${i + 1}</div>
+      <div class="review-sub">${r.label}</div>
+      <div class="review-words">${wordCount}개</div>
+    </div>`;
+  }).join('');
+}
+
+function getReviewWords(levels) {
+  const words = [];
+  for (const lv of levels) {
+    for (const w of (LEVELS[lv]?.words || [])) {
+      if (!words.includes(w)) words.push(w);
+    }
+  }
+  return words;
+}
+
+// 단어의 핵심 모음 추출 (CVC 패턴에서 가운데 글자)
+function getWordVowel(w) {
+  if (w.length >= 2) return w[w.length - 2];
+  return w[0];
+}
+
+// 모음별로 교차 배치하는 셔플 (a→i→o→u→e 번갈아)
+function shuffleInterleaved(words) {
+  const groups = {};
+  for (const w of words) {
+    const v = getWordVowel(w);
+    if (!groups[v]) groups[v] = [];
+    groups[v].push(w);
+  }
+  // 각 그룹 내부 셔플
+  const vowelKeys = Object.keys(groups);
+  shuffle(vowelKeys);
+  for (const k of vowelKeys) shuffle(groups[k]);
+  // 라운드 로빈으로 교차 배치
+  const result = [];
+  let exhausted = 0;
+  const idx = {};
+  for (const k of vowelKeys) idx[k] = 0;
+  while (exhausted < vowelKeys.length) {
+    for (const k of vowelKeys) {
+      if (idx[k] < groups[k].length) {
+        result.push(groups[k][idx[k]++]);
+        if (idx[k] >= groups[k].length) exhausted++;
+      }
+    }
+  }
+  return result;
+}
+
+function startReview(levels, label) {
+  reviewMode = {levels, label};
+  document.getElementById('review-title').textContent = `${label} 복습`;
+  document.getElementById('review-word-count').textContent = getReviewWords(levels).length;
+  showScreen('review');
+}
+
+function startReviewGameShow() {
+  if (!reviewMode) return;
+  showScreen('gameshow');
+  // 복습 모드: 모음 교차 셔플로 출제
+  let pool = getReviewWords(reviewMode.levels);
+  if (pool.length < 4) pool = [...ALL_WORDS];
+  pool = shuffleInterleaved(pool);
+  const total = Math.min(25, pool.length);
+  gsState = { pool, questions: pool.slice(0, total), current: 0, score: 0, total, isReview: true };
+  document.getElementById('gs-level-bar').innerHTML = `<button class="active" style="background:linear-gradient(135deg,#667eea,#764ba2);border:none">${reviewMode.label} 복습</button>`;
+  document.getElementById('gs-start-btn').classList.add('hidden');
+  document.getElementById('gs-result').classList.add('hidden');
+  document.getElementById('gs-playing').classList.remove('hidden');
+  nextGameShowQuestion();
+}
+
+function startReviewSpelling() {
+  if (!reviewMode) return;
+  showScreen('spelling');
+  // 복습 모드: 모음 교차 셔플로 출제
+  let pool = getReviewWords(reviewMode.levels).filter(w => KOREAN[w]);
+  if (pool.length < 4) pool = ALL_WORDS.filter(w => KOREAN[w]);
+  pool = shuffleInterleaved(pool);
+  const total = Math.min(25, pool.length);
+  spState = { pool, questions: pool.slice(0, total), current: 0, score: 0, total, hints: 0 };
+  document.getElementById('sp-level-bar').innerHTML = `<button class="active" style="background:linear-gradient(135deg,#667eea,#764ba2);border:none">${reviewMode.label} 복습</button>`;
+  document.getElementById('sp-start-btn').classList.add('hidden');
+  document.getElementById('sp-result').classList.add('hidden');
+  document.getElementById('sp-playing').classList.remove('hidden');
+  nextSpellingQuestion();
+}
+
+// ===== Progress =====
+async function loadProgress() {
+  try {
+    const res = await fetch('/api/progress');
+    const data = await res.json();
+    renderProgress(data.summary, data.history, 'progress-summary', 'progress-history');
+  } catch(e) {}
+}
+
+function renderProgress(summary, history, sumId, histId) {
+  const sumEl = document.getElementById(sumId);
+  const activities = {'듣기 퀴즈':{icon:'?!',color:'var(--secondary)'},'스펠링 퀴즈':{icon:'Aa',color:'var(--success)'},'글자 찾기':{icon:'ab',color:'var(--accent)'}};
+  let totalCorrect = 0, totalQ = 0, totalSessions = 0;
+  for (const s of summary) { totalCorrect += s.correct||0; totalQ += s.total||0; totalSessions += s.sessions||0; }
+
+  sumEl.innerHTML = `
+    <div class="progress-card">
+      <div class="value">${totalSessions}</div><div class="label">총 학습 횟수</div>
+    </div>
+    <div class="progress-card">
+      <div class="value">${totalCorrect}</div><div class="label">총 정답 수</div>
+    </div>
+    <div class="progress-card">
+      <div class="value">${totalQ ? Math.round(totalCorrect/totalQ*100) : 0}%</div>
+      <div class="label">정답률</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${totalQ?Math.round(totalCorrect/totalQ*100):0}%"></div></div>
+    </div>
+  ` + summary.map(s => `
+    <div class="progress-card">
+      <div class="value" style="font-size:24px">${s.avg_score||0}</div>
+      <div class="label">${s.activity} 평균 점수</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px">${s.sessions}회 / 정답률 ${s.total?Math.round(s.correct/s.total*100):0}%</div>
+    </div>
+  `).join('');
+
+  const histEl = document.getElementById(histId);
+  histEl.innerHTML = history.slice(0, 50).map(h => `
+    <tr>
+      <td>${h.activity}</td>
+      ${histId.includes('sd') ? `<td>${h.word||'-'}</td>` : ''}
+      <td>${h.correct}/${h.total}</td>
+      <td>${histId.includes('sd') ? `${h.correct}/${h.total}` : ''}</td>
+      <td>${h.score}점</td>
+      <td>${new Date(h.completed_at).toLocaleDateString('ko-KR')}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light)">아직 학습 기록이 없습니다</td></tr>';
+}
+
+async function saveResult(activity, correct, total, score) {
+  try {
+    await fetch('/api/progress', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({activity, correct, total, score})
+    });
+  } catch(e) {}
+}
+
+// ===== Teacher =====
+async function loadStudents() {
+  try {
+    const res = await fetch('/api/students');
+    const students = await res.json();
+    const list = document.getElementById('student-list');
+    if (!students.length) {
+      list.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:40px">등록된 학생이 없습니다. 위에서 학생을 추가해주세요.</p>';
+      return;
+    }
+    list.innerHTML = students.map(s => {
+      const totalSessions = s.progress.reduce((a,p) => a + (p.sessions||0), 0);
+      const totalCorrect = s.progress.reduce((a,p) => a + (p.correct||0), 0);
+      const totalQ = s.progress.reduce((a,p) => a + (p.total||0), 0);
+      const pct = totalQ ? Math.round(totalCorrect/totalQ*100) : 0;
+      const lastDate = s.last_active ? new Date(s.last_active).toLocaleDateString('ko-KR',{year:'numeric',month:'short',day:'numeric'}) : '기록 없음';
+      const regDate = new Date(s.created_at).toLocaleDateString('ko-KR',{year:'numeric',month:'short',day:'numeric'});
+      const activityHtml = s.progress.map(p => {
+        const apct = p.total ? Math.round(p.correct/p.total*100) : 0;
+        return `<div style="display:flex;justify-content:space-between;font-size:12px;margin:2px 0">
+          <span>${p.activity}</span><span>${apct}% (${p.sessions}회)</span></div>`;
+      }).join('') || '<div style="font-size:12px;color:var(--text-light)">아직 학습 기록 없음</div>';
+      return `
+        <div class="student-card">
+          <div class="name">${s.name}</div>
+          <div class="username">@${s.username}</div>
+          <div style="font-size:12px;color:var(--text-light);margin-bottom:8px">등록: ${regDate} | 최근: ${lastDate}</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">학습 ${totalSessions}회 | 정답률 ${pct}%</div>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+          <div style="margin-top:10px;padding:8px;background:#F8F7FF;border-radius:8px">${activityHtml}</div>
+          <div class="actions">
+            <button class="btn-primary btn-sm" onclick="viewStudent(${s.id})">진도 보기</button>
+            <button class="btn-outline btn-sm" onclick="resetStudentPw(${s.id},'${s.name}')">비번 초기화</button>
+            <button class="btn-warning btn-sm" onclick="deleteStudent(${s.id},'${s.name}')">삭제</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) {}
+}
+
+async function addStudent() {
+  const name = document.getElementById('new-name').value.trim();
+  const username = document.getElementById('new-username').value.trim();
+  const password = document.getElementById('new-password').value;
+  if (!name || !username || !password) { alert('모든 필드를 입력해주세요'); return; }
+  try {
+    const res = await fetch('/api/students', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name, username, password})
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error); return; }
+    document.getElementById('new-name').value = '';
+    document.getElementById('new-username').value = '';
+    document.getElementById('new-password').value = '';
+    loadStudents();
+  } catch(e) { alert('서버 오류'); }
+}
+
+async function deleteStudent(id, name) {
+  if (!confirm(`${name} 학생을 삭제하시겠습니까? 모든 학습 기록이 삭제됩니다.`)) return;
+  await fetch(`/api/students/${id}`, {method:'DELETE'});
+  loadStudents();
+}
+
+async function resetStudentPw(id, name) {
+  const pw = prompt(`${name} 학생의 새 비밀번호를 입력하세요:`);
+  if (!pw) return;
+  await fetch(`/api/students/${id}/reset`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({password: pw})
+  });
+  alert('비밀번호가 변경되었습니다');
+}
+
+async function viewStudent(id) {
+  try {
+    const res = await fetch(`/api/student/${id}/progress`);
+    const data = await res.json();
+    document.getElementById('sd-name').textContent = data.student.name + ' 학생';
+    renderStudentDetail(data.summary, data.history);
+    showScreen('student-detail');
+  } catch(e) {}
+}
+
+function renderStudentDetail(summary, history) {
+  const sumEl = document.getElementById('sd-summary');
+  let totalCorrect = 0, totalQ = 0, totalSessions = 0;
+  for (const s of summary) { totalCorrect += s.correct||0; totalQ += s.total||0; totalSessions += s.sessions||0; }
+
+  sumEl.innerHTML = `
+    <div class="progress-card"><div class="value">${totalSessions}</div><div class="label">총 학습 횟수</div></div>
+    <div class="progress-card"><div class="value">${totalCorrect}</div><div class="label">총 정답 수</div></div>
+    <div class="progress-card">
+      <div class="value">${totalQ ? Math.round(totalCorrect/totalQ*100) : 0}%</div><div class="label">정답률</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${totalQ?Math.round(totalCorrect/totalQ*100):0}%"></div></div>
+    </div>
+  ` + summary.map(s => `
+    <div class="progress-card">
+      <div class="value" style="font-size:24px">${s.avg_score||0}</div>
+      <div class="label">${s.activity} 평균</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px">${s.sessions}회 학습</div>
+    </div>
+  `).join('');
+
+  const histEl = document.getElementById('sd-history');
+  histEl.innerHTML = history.slice(0, 100).map(h => {
+    const d = new Date(h.completed_at);
+    const dateStr = d.toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'});
+    const timeStr = d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    const rate = h.total ? Math.round(h.correct/h.total*100) : 0;
+    return `<tr>
+      <td>${h.activity}</td><td>${h.word||'-'}</td><td>${h.correct}/${h.total}</td><td>${rate}%</td><td>${h.score}점</td>
+      <td>${dateStr} ${timeStr}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-light)">학습 기록 없음</td></tr>';
+}
+
+// ===== Utils =====
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ===== Init =====
+document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+checkSession();
+</script>
+</body>
+</html>
