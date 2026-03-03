@@ -543,8 +543,8 @@ nav .user-info button { font-size:12px; padding:6px 12px; }
     <h2 id="story-read-title">Read Along</h2>
     <div class="story-reader">
       <div class="story-image-container" onclick="speakSentence()" style="cursor:pointer"><img id="story-read-img" src="" alt="Story"></div>
-      <div class="story-sentence" id="story-read-text"></div>
-      <p style="text-align:center;color:var(--text-light);font-size:12px;margin-top:8px">그림, 문장, 단어를 터치하면 소리가 나와요!</p>
+      <div class="story-sentence" id="story-read-text" onclick="speakSentence()"></div>
+      <p style="text-align:center;color:var(--text-light);font-size:12px;margin-top:8px">그림이나 문장을 터치하면 소리가 나와요!</p>
       <div class="story-nav">
         <button class="btn-outline btn-sm" id="story-prev-btn" onclick="storyReadPrev()">이전</button>
         <span class="page-ind" id="story-read-ind">1 / 8</span>
@@ -1660,14 +1660,7 @@ function initStoryRead() {
 
 function renderReadSentence() {
   const s = currentStory.sentences[currentStory.idx];
-  // 각 단어를 클릭 가능한 스팬으로 렌더링
-  const wordsHtml = s.text.split(/\s+/).map(w =>
-    `<span class="read-word" onclick="event.stopPropagation();speakText('${w.replace(/'/g,"\\'")}')" style="cursor:pointer;padding:4px 2px;border-radius:6px;transition:background .2s"
-     onmousedown="this.style.background='#E8E6FF'" onmouseup="this.style.background=''" ontouchstart="this.style.background='#E8E6FF'" ontouchend="this.style.background=''">${w}</span>`
-  ).join(' ');
-  document.getElementById('story-read-text').innerHTML = wordsHtml;
-  // 문장 전체 클릭 시 전체 문장 읽기
-  document.getElementById('story-read-text').onclick = function(e) { if (e.target === this) speakSentence(); };
+  document.getElementById('story-read-text').textContent = s.text;
   document.getElementById('story-read-img').src = '/static/images/storybook/' + s.imageRef + '.png';
   document.getElementById('story-read-img').onerror = function(){ this.style.display='none'; };
   document.getElementById('story-read-img').onload = function(){ this.style.display=''; };
@@ -1688,56 +1681,30 @@ function storyReadNext() {
   speakSentence();
 }
 
-// 문장 TTS (Google TTS 오디오 → Web Speech API 폴백, Android+iOS 모두 지원)
-// Google TTS로 텍스트 읽기 (단어/문장 모두 지원, Android+iOS)
+// ===== 문장 TTS (Google TTS Audio, Android+iOS 모두 지원) =====
 let storyAudio = null;
-function speakText(text) {
-  if (!text) return;
-  if (storyAudio) { storyAudio.pause(); storyAudio = null; }
-  // 특수문자 정리
-  const clean = text.replace(/[",!?.]/g, '').trim();
-  if (!clean) return;
-  // mp3 단어 파일 먼저 시도 (단어 학습용 mp3가 있으면 사용)
-  const lw = clean.toLowerCase();
-  const wordAudio = new Audio('/static/audio/words/' + lw + '.mp3');
-  wordAudio.play().catch(() => {
-    // mp3 없으면 Google TTS
-    const url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=' + encodeURIComponent(clean);
-    storyAudio = new Audio(url);
-    storyAudio.play().catch(() => {
-      // 최종 폴백: Web Speech API
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(clean);
-        u.lang = 'en-US'; u.rate = 0.85;
-        window.speechSynthesis.speak(u);
-      }
-    });
-  });
-}
-
 function speakSentence() {
-  const s = currentStory.sentences[currentStory.idx];
+  const s = currentStory.sentences ? currentStory.sentences[currentStory.idx] : null;
   if (!s) return;
-  const text = s.text;
-  // 이전 오디오 정리
+  // 이전 재생 중지
   if (storyAudio) { storyAudio.pause(); storyAudio = null; }
-  // 방법 1: Google TTS (가장 안정적, 모바일 100% 호환)
-  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=' + encodeURIComponent(text);
+  // Google TTS: Audio 요소로 재생 (모바일 가장 안정적)
+  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=' + encodeURIComponent(s.text);
   storyAudio = new Audio(url);
-  storyAudio.playbackRate = 0.9;
-  storyAudio.play().catch(() => {
-    // 방법 2: Web Speech API 폴백
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US'; u.rate = 0.8; u.pitch = 1.0;
-      const voices = window.speechSynthesis.getVoices();
-      const enVoice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
-      if (enVoice) u.voice = enVoice;
-      window.speechSynthesis.speak(u);
-    }
-  });
+  const playPromise = storyAudio.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {
+      // Google TTS 실패 시 Web Speech API
+      try {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(s.text);
+          u.lang = 'en-US'; u.rate = 0.8;
+          window.speechSynthesis.speak(u);
+        }
+      } catch(e) {}
+    });
+  }
 }
 
 // ===== MODE B: Fill in the Blank =====
