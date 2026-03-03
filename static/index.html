@@ -514,6 +514,43 @@ nav .user-info button { font-size:12px; padding:6px 12px; }
         <div style="padding-top:20px"><button class="btn-primary" onclick="addStudent()">추가</button></div>
       </div>
     </div>
+
+    <!-- 일괄 과제 배정 -->
+    <div class="add-form" style="margin-top:20px;border-top:3px solid var(--secondary)">
+      <h3>일괄 과제 배정 (전체 학생)</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px">
+        <div>
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">과제 유형</label>
+          <select id="bulk-hw-type" onchange="updateBulkOptions()" style="padding:8px 12px;border-radius:8px;border:2px solid #E0E0E0;font-size:14px">
+            <option value="words">Words (듣기+스펠링)</option>
+            <option value="storybook">Story Book</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">레벨/Day</label>
+          <select id="bulk-hw-target" style="padding:8px 12px;border-radius:8px;border:2px solid #E0E0E0;font-size:14px">
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+            <option value="5">Level 5</option>
+            <option value="6">Level 6</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">마감일</label>
+          <input type="date" id="bulk-hw-due" style="padding:8px 12px;border-radius:8px;border:2px solid #E0E0E0;font-size:14px">
+        </div>
+        <div style="padding-top:20px">
+          <button class="btn-secondary" onclick="assignBulkHw()" style="font-size:15px;padding:10px 24px">전체 배정</button>
+        </div>
+      </div>
+      <div id="bulk-hw-status" style="margin-top:10px;font-size:13px;color:var(--text-light)"></div>
+    </div>
+
+    <!-- 현재 과제 현황 -->
+    <div id="bulk-hw-list" style="margin-top:16px"></div>
+
     <div class="teacher-grid" id="student-list"></div>
   </div>
 
@@ -812,7 +849,7 @@ function showScreen(id) {
   if (id === 'gameshow') renderLevelBar('gs-level-bar', gsLevel, 'changeGsLevel');
   if (id === 'spelling') renderLevelBar('sp-level-bar', spLevel, 'changeSpLevel');
   if (id === 'progress') loadProgress();
-  if (id === 'teacher') loadStudents();
+  if (id === 'teacher') { loadStudents(); loadBulkHwList(); }
   if (id === 'homework') loadHomework();
 }
 
@@ -1275,6 +1312,8 @@ async function saveResult(activity, correct, total, score) {
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({activity, correct, total, score})
     });
+    // Words 과제 자동 완료 체크
+    if (homeworkCache.length) await checkHomeworkCompletion();
   } catch(e) {}
 }
 
@@ -1310,11 +1349,9 @@ async function loadStudents() {
           <div style="margin-top:10px;padding:8px;background:#F8F7FF;border-radius:8px">${activityHtml}</div>
           <div class="actions">
             <button class="btn-primary btn-sm" onclick="viewStudent(${s.id})">진도 보기</button>
-            <button class="btn-secondary btn-sm" onclick="toggleHwAssign(${s.id},'${s.name}')">과제 배정</button>
             <button class="btn-outline btn-sm" onclick="resetStudentPw(${s.id},'${s.name}')">비번 초기화</button>
             <button class="btn-warning btn-sm" onclick="deleteStudent(${s.id},'${s.name}')">삭제</button>
           </div>
-          <div id="hw-container-${s.id}" class="hidden"></div>
         </div>
       `;
     }).join('');
@@ -1899,11 +1936,28 @@ async function saveStoryResult(mode, correct, total, score) {
 }
 
 async function checkHomeworkCompletion() {
+  // 진도 데이터 가져오기
+  let progHistory = [];
+  try {
+    const pr = await fetch('/api/progress');
+    const pd = await pr.json();
+    progHistory = pd.history || [];
+  } catch(e) {}
+
   for (const hw of homeworkCache) {
     if (hw.completed) continue;
     if (hw.hw_type === 'storybook') {
       const dayNum = parseInt(hw.hw_target.replace('day_',''));
       if (isDayCompleted(dayNum)) {
+        await fetch(`/api/homework/${hw.id}/complete`, {method:'POST'});
+        hw.completed = 1;
+      }
+    } else if (hw.hw_type === 'words' && hw.hw_target.startsWith('word_lv')) {
+      // Words 과제: 듣기+스펠링 둘 다 해야 완료
+      const lv = hw.hw_target.replace('word_lv','');
+      const hasListening = progHistory.some(p => p.activity && p.activity.includes('듣기') && p.activity.includes('Lv'+lv));
+      const hasSpelling = progHistory.some(p => p.activity && p.activity.includes('스펠링') && p.activity.includes('Lv'+lv));
+      if (hasListening && hasSpelling) {
         await fetch(`/api/homework/${hw.id}/complete`, {method:'POST'});
         hw.completed = 1;
       }
@@ -1964,13 +2018,24 @@ function renderHwCard(hw, progData) {
       detailHtml = modeStatus;
     }
     goAction = `openDay(${dayNum})`;
+  } else if (hw.hw_type === 'words' && hw.hw_target.startsWith('word_lv')) {
+    // Words 과제: 듣기+스펠링 묶음
+    const lv = hw.hw_target.replace('word_lv','');
+    const history = progData.history || [];
+    const hasListening = history.some(p => p.activity && p.activity.includes('듣기') && p.activity.includes('Lv'+lv));
+    const hasSpelling = history.some(p => p.activity && p.activity.includes('스펠링') && p.activity.includes('Lv'+lv));
+    const listenScore = history.find(p => p.activity && p.activity.includes('듣기') && p.activity.includes('Lv'+lv));
+    const spellScore = history.find(p => p.activity && p.activity.includes('스펠링') && p.activity.includes('Lv'+lv));
+    detailHtml = `듣기: ${hasListening ? '✅ '+(listenScore?listenScore.score+'점':'완료') : '❌ 미완료'}<br>스펠링: ${hasSpelling ? '✅ '+(spellScore?spellScore.score+'점':'완료') : '❌ 미완료'}`;
+    // 듣기 먼저, 스펠링 다음으로 이동
+    if (!hasListening) goAction = `changeGsLevel('${lv}');showScreen('gameshow')`;
+    else if (!hasSpelling) goAction = `changeSpLevel('${lv}');showScreen('spelling')`;
   } else {
-    // Words homework
+    // 기존 개별 과제 호환
     const target = hw.hw_target;
     const matching = (progData.history || []).filter(p => {
       if (target.startsWith('gameshow_')) return p.activity.includes('듣기') && p.activity.includes('Lv' + target.split('_')[1]);
       if (target.startsWith('spelling_')) return p.activity.includes('스펠링') && p.activity.includes('Lv' + target.split('_')[1]);
-      if (target.startsWith('review_')) return p.activity.includes('복습') && p.activity.includes(target.split('_')[1]);
       return false;
     });
     if (matching.length) {
@@ -1980,10 +2045,6 @@ function renderHwCard(hw, progData) {
     }
     if (target.startsWith('gameshow_')) goAction = `changeGsLevel('${target.split('_')[1]}');showScreen('gameshow')`;
     else if (target.startsWith('spelling_')) goAction = `changeSpLevel('${target.split('_')[1]}');showScreen('spelling')`;
-    else if (target.startsWith('review_')) {
-      const rIdx = parseInt(target.split('_')[1]) - 1;
-      if (REVIEWS[rIdx]) goAction = `startReview(${JSON.stringify(REVIEWS[rIdx].levels)},'${REVIEWS[rIdx].label}')`;
-    }
   }
 
   const dueStr = hw.due_date ? `마감: ${hw.due_date}` : '';
@@ -2003,117 +2064,102 @@ function renderHwCard(hw, progData) {
   </div>`;
 }
 
-// ===== Teacher: Homework Assignment =====
-function renderHwAssignUI(studentId, studentName) {
-  const levels = [1,2,3,4,5,6];
-  const activities = [{key:'gameshow',label:'듣기 퀴즈'},{key:'spelling',label:'스펠링'}];
-  const days = [1,2,3,4,5];
-
-  let html = `<div class="hw-assign-section" id="hw-assign-${studentId}">
-    <h4>${studentName} - 과제 배정</h4>
-    <div class="hw-assign-row">
-      <label>Words:</label>
-      <select id="hw-activity-${studentId}">
-        ${activities.map(a => `<option value="${a.key}">${a.label}</option>`).join('')}
-      </select>
-      <select id="hw-level-${studentId}">
-        ${levels.map(l => `<option value="${l}">Level ${l}</option>`).join('')}
-      </select>
-      <input type="date" id="hw-due-w-${studentId}" style="padding:6px;border-radius:6px;border:1px solid #ccc">
-      <button class="btn-primary btn-sm" onclick="assignWordsHw(${studentId})">배정</button>
-    </div>
-    <div class="hw-assign-row">
-      <label>복습:</label>
-      <select id="hw-review-${studentId}">
-        ${REVIEWS.map((r, i) => `<option value="${i}">${r.label} (${getReviewWords(r.levels).length}개)</option>`).join('')}
-      </select>
-      <input type="date" id="hw-due-r-${studentId}" style="padding:6px;border-radius:6px;border:1px solid #ccc">
-      <button class="btn-primary btn-sm" onclick="assignReviewHw(${studentId})">배정</button>
-    </div>
-    <div class="hw-assign-row">
-      <label>Story:</label>
-      ${days.map(d => `<button class="hw-toggle" onclick="assignStoryHw(${studentId},${d},this)">Day ${d}</button>`).join(' ')}
-      <input type="date" id="hw-due-s-${studentId}" style="padding:6px;border-radius:6px;border:1px solid #ccc">
-    </div>
-    <div id="hw-current-${studentId}" style="margin-top:12px"></div>
-  </div>`;
-  return html;
+// ===== Teacher: Bulk Homework Assignment =====
+function updateBulkOptions() {
+  const type = document.getElementById('bulk-hw-type').value;
+  const sel = document.getElementById('bulk-hw-target');
+  if (type === 'words') {
+    sel.innerHTML = [1,2,3,4,5,6].map(l => `<option value="${l}">Level ${l}</option>`).join('');
+  } else {
+    sel.innerHTML = [1,2,3,4,5].map(d => `<option value="${d}">Day ${d}</option>`).join('');
+  }
 }
 
-async function assignWordsHw(studentId) {
-  const activity = document.getElementById(`hw-activity-${studentId}`).value;
-  const level = document.getElementById(`hw-level-${studentId}`).value;
-  const due = document.getElementById(`hw-due-w-${studentId}`).value || null;
-  const label = (activity === 'gameshow' ? '듣기 퀴즈' : '스펠링') + ' Level ' + level;
-  await fetch('/api/homework', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ student_id:studentId, hw_type:'words', hw_target:`${activity}_lv${level}`, hw_label:label, due_date:due })
-  });
-  alert('과제가 배정되었습니다!');
-  loadStudents();
+async function assignBulkHw() {
+  const type = document.getElementById('bulk-hw-type').value;
+  const target = document.getElementById('bulk-hw-target').value;
+  const due = document.getElementById('bulk-hw-due').value || null;
+  let hwType, hwTarget, hwLabel;
+  if (type === 'words') {
+    hwType = 'words';
+    hwTarget = `word_lv${target}`;
+    hwLabel = `Words Level ${target} (듣기+스펠링)`;
+  } else {
+    hwType = 'storybook';
+    hwTarget = `day_${target}`;
+    hwLabel = `Story Book Day ${target}`;
+  }
+  if (!confirm(`전체 학생에게 "${hwLabel}" 과제를 배정하시겠습니까?`)) return;
+  try {
+    const res = await fetch('/api/homework/bulk', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ hw_type:hwType, hw_target:hwTarget, hw_label:hwLabel, due_date:due })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      document.getElementById('bulk-hw-status').textContent = `${data.count}명에게 과제 배정 완료!`;
+      document.getElementById('bulk-hw-status').style.color = 'var(--success)';
+      loadBulkHwList();
+      loadStudents();
+    } else {
+      alert(data.error || '오류');
+    }
+  } catch(e) { alert('서버 오류'); }
 }
 
-async function assignReviewHw(studentId) {
-  const rIdx = parseInt(document.getElementById(`hw-review-${studentId}`).value);
-  const due = document.getElementById(`hw-due-r-${studentId}`).value || null;
-  const r = REVIEWS[rIdx];
-  const label = `복습 ${r.label}`;
-  await fetch('/api/homework', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ student_id:studentId, hw_type:'words', hw_target:`review_${rIdx+1}`, hw_label:label, due_date:due })
-  });
-  alert('복습 과제가 배정되었습니다!');
-  loadStudents();
+async function loadBulkHwList() {
+  try {
+    const res = await fetch('/api/homework/all');
+    const all = await res.json();
+    const el = document.getElementById('bulk-hw-list');
+    if (!all.length) { el.innerHTML = ''; return; }
+    // Group by hw_target
+    const groups = {};
+    for (const h of all) {
+      const key = h.hw_target;
+      if (!groups[key]) groups[key] = { label:h.hw_label, due:h.due_date, items:[] };
+      groups[key].items.push(h);
+    }
+    let html = '<div style="background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)">';
+    html += '<h3 style="margin-bottom:12px">현재 과제 현황</h3>';
+    for (const [target, g] of Object.entries(groups)) {
+      const done = g.items.filter(i => i.completed).length;
+      const total = g.items.length;
+      const pct = Math.round(done/total*100);
+      html += `<div style="display:flex;align-items:center;gap:12px;padding:10px;margin:6px 0;background:#F8F7FF;border-radius:10px">
+        <div style="flex:1">
+          <strong>${g.label}</strong>
+          <span style="font-size:12px;color:var(--text-light);margin-left:8px">${g.due ? '마감: '+g.due : ''}</span>
+          <div style="font-size:12px;margin-top:4px">완료: ${done}/${total}명 (${pct}%)</div>
+          <div class="progress-bar-bg" style="height:6px;margin-top:4px"><div class="progress-bar-fill" style="width:${pct}%;background:${pct>=80?'var(--success)':pct>=50?'var(--accent)':'var(--warning)'}"></div></div>
+          <div style="font-size:11px;margin-top:4px;color:var(--text-light)">${g.items.map(i => `${i.student_name}${i.completed?'✅':'❌'}`).join(' | ')}</div>
+        </div>
+        <button class="btn-warning btn-sm" onclick="deleteBulkHw('${target}')">전체 삭제</button>
+      </div>`;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {}
 }
 
-async function assignStoryHw(studentId, dayId, btn) {
-  const due = document.getElementById(`hw-due-s-${studentId}`).value || null;
-  const label = `Story Book Day ${dayId}`;
-  const res = await fetch('/api/homework', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ student_id:studentId, hw_type:'storybook', hw_target:`day_${dayId}`, hw_label:label, due_date:due })
-  });
-  const data = await res.json();
-  if (res.ok) { btn.classList.add('active'); alert('스토리 과제가 배정되었습니다!'); }
-  else alert(data.error || '오류');
+async function deleteBulkHw(target) {
+  if (!confirm('이 과제를 전체 삭제하시겠습니까?')) return;
+  try {
+    const res = await fetch('/api/homework/all');
+    const all = await res.json();
+    const toDelete = all.filter(h => h.hw_target === target);
+    for (const h of toDelete) {
+      await fetch(`/api/homework/${h.id}`, {method:'DELETE'});
+    }
+    loadBulkHwList();
+    loadStudents();
+  } catch(e) {}
 }
 
 async function deleteHw(hwId) {
   if (!confirm('이 과제를 삭제하시겠습니까?')) return;
   await fetch(`/api/homework/${hwId}`, {method:'DELETE'});
   loadStudents();
-}
-
-function toggleHwAssign(studentId, name) {
-  const container = document.getElementById(`hw-container-${studentId}`);
-  if (container.classList.contains('hidden')) {
-    container.innerHTML = renderHwAssignUI(studentId, name);
-    container.classList.remove('hidden');
-    loadStudentHwStatus(studentId);
-  } else {
-    container.classList.add('hidden');
-    container.innerHTML = '';
-  }
-}
-
-async function loadStudentHwStatus(studentId) {
-  try {
-    const res = await fetch(`/api/student/${studentId}/story-progress`);
-    const data = await res.json();
-    const el = document.getElementById(`hw-current-${studentId}`);
-    if (!el) return;
-    if (!data.homework.length) {
-      el.innerHTML = '<p style="font-size:12px;color:var(--text-light)">배정된 과제 없음</p>';
-      return;
-    }
-    el.innerHTML = '<h4 style="font-size:13px;margin-bottom:8px">현재 과제:</h4>' +
-      data.homework.map(h => `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px">
-        <span>${h.completed ? '&#9989;' : '&#10060;'}</span>
-        <span>${h.hw_label}</span>
-        ${h.due_date ? `<span style="color:var(--text-light)">마감: ${h.due_date}</span>` : ''}
-        <button class="btn-warning btn-sm" style="padding:2px 8px;font-size:11px" onclick="deleteHw(${h.id})">삭제</button>
-      </div>`).join('');
-  } catch(e) {}
 }
 
 // Also update viewStudent to show homework

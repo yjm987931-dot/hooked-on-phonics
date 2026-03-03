@@ -385,6 +385,36 @@ def assign_homework():
     return jsonify({'ok': True})
 
 
+@app.route('/api/homework/bulk', methods=['POST'])
+@teacher_required
+def assign_homework_bulk():
+    """전체 학생 일괄 과제 배정"""
+    data = request.get_json(force=True, silent=True) or {}
+    hw_type = data.get('hw_type')
+    hw_target = data.get('hw_target')
+    hw_label = data.get('hw_label')
+    due_date = data.get('due_date')
+    if not hw_type or not hw_target:
+        return jsonify({'error': '필수 항목 누락'}), 400
+    db = get_db()
+    students = db.execute("SELECT id FROM users WHERE role='student'").fetchall()
+    count = 0
+    for s in students:
+        existing = db.execute(
+            "SELECT id FROM homework WHERE student_id=? AND hw_type=? AND hw_target=? AND completed=0",
+            (s['id'], hw_type, hw_target)
+        ).fetchone()
+        if not existing:
+            db.execute(
+                "INSERT INTO homework (student_id, hw_type, hw_target, hw_label, due_date) VALUES (?, ?, ?, ?, ?)",
+                (s['id'], hw_type, hw_target, hw_label, due_date)
+            )
+            count += 1
+    db.commit()
+    db.close()
+    return jsonify({'ok': True, 'count': count})
+
+
 @app.route('/api/homework/<int:hw_id>', methods=['DELETE'])
 @teacher_required
 def delete_homework(hw_id):
