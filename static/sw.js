@@ -1,12 +1,19 @@
 // YJ-Phonics Service Worker
-const CACHE_NAME = 'yj-phonics-v1';
+const CACHE_NAME = 'yj-phonics-v2';
+const PRE_CACHE = ['/', '/static/index.html', '/static/bubble-game.js', '/static/manifest.json', '/static/icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
-  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(c => c.addAll(PRE_CACHE)).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(clients.claim());
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+    )).then(() => clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (e) => {
