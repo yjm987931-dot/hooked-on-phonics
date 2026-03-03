@@ -562,7 +562,7 @@ nav .user-info button { font-size:12px; padding:6px 12px; }
         <div class="round" id="fill-round">1 / 8</div>
         <div class="score" id="fill-score">0점</div>
       </div>
-      <div class="story-image-container"><img id="fill-img" src="" alt=""></div>
+      <!-- 이미지 숨김: 학생이 스스로 생각하도록 -->
       <div class="fill-sentence" id="fill-sentence"></div>
       <div class="word-bank" id="fill-bank"></div>
     </div>
@@ -585,7 +585,7 @@ nav .user-info button { font-size:12px; padding:6px 12px; }
         <div class="round" id="unscr-round">1 / 8</div>
         <div class="score" id="unscr-score">0점</div>
       </div>
-      <div class="story-image-container"><img id="unscr-img" src="" alt=""></div>
+      <!-- 이미지 숨김: 학생이 스스로 생각하도록 -->
       <div class="drop-zone" id="unscr-dropzone"></div>
       <div class="scramble-bank" id="unscr-bank"></div>
       <div style="text-align:center;margin-top:16px">
@@ -1425,9 +1425,7 @@ const STORY_DATA = {
         {text:'Fat Cat ran.', words:['Fat','Cat','ran.'], blankWord:'ran', imageRef:'day1_matthid_2'},
         {text:'Fat Cat and Matt ran.', words:['Fat','Cat','and','Matt','ran.'], blankWord:'Matt', imageRef:'day1_matthid_2'},
         {text:'Fat Cat hid Matt.', words:['Fat','Cat','hid','Matt.'], blankWord:'hid', imageRef:'day1_matthid_2'}
-      ]}
-    ]},
-    { id:2, title:'Day 2', stories:[
+      ]},
       { id:'on-the-mat', title:'On the Mat', images:['day2_onthemat_1'], sentences:[
         {text:'The rat is on the mat.', words:['The','rat','is','on','the','mat.'], blankWord:'rat', imageRef:'day2_onthemat_1'},
         {text:'And the cat is on the rat.', words:['And','the','cat','is','on','the','rat.'], blankWord:'cat', imageRef:'day2_onthemat_1'},
@@ -1435,7 +1433,9 @@ const STORY_DATA = {
         {text:'And the wig is on the pig.', words:['And','the','wig','is','on','the','pig.'], blankWord:'wig', imageRef:'day2_onthemat_1'},
         {text:'And the hat is on the wig.', words:['And','the','hat','is','on','the','wig.'], blankWord:'hat', imageRef:'day2_onthemat_1'},
         {text:'And the bat is on the hat!', words:['And','the','bat','is','on','the','hat!'], blankWord:'bat', imageRef:'day2_onthemat_1'}
-      ]},
+      ]}
+    ]},
+    { id:2, title:'Day 2', stories:[
       { id:'i-like-it', title:'I Like It!', images:['day2_ilikeit_1'], sentences:[
         {text:'I like to dig.', words:['I','like','to','dig.'], blankWord:'dig', imageRef:'day2_ilikeit_1'},
         {text:'I like to zip.', words:['I','like','to','zip.'], blankWord:'zip', imageRef:'day2_ilikeit_1'},
@@ -1444,9 +1444,7 @@ const STORY_DATA = {
         {text:'I like to zig.', words:['I','like','to','zig.'], blankWord:'zig', imageRef:'day2_ilikeit_1'},
         {text:'I like to zag.', words:['I','like','to','zag.'], blankWord:'zag', imageRef:'day2_ilikeit_1'},
         {text:'I like to wag!', words:['I','like','to','wag!'], blankWord:'wag', imageRef:'day2_ilikeit_1'}
-      ]}
-    ]},
-    { id:3, title:'Day 3', stories:[
+      ]},
       { id:'fox-ox-box', title:'Fox, Ox, and the Box', images:['day3_foxox_1','day3_foxox_2'], sentences:[
         {text:'Fox.', words:['Fox.'], blankWord:'Fox', imageRef:'day3_foxox_1'},
         {text:'Box.', words:['Box.'], blankWord:'Box', imageRef:'day3_foxox_1'},
@@ -1478,7 +1476,7 @@ const STORY_DATA = {
         {text:'Rats with caps.', words:['Rats','with','caps.'], blankWord:'caps', imageRef:'day3_whathascaps_1'}
       ]}
     ]},
-    { id:4, title:'Day 4', stories:[
+    { id:3, title:'Day 3', stories:[
       { id:'bugs-and-dogs', title:'Bugs and Dogs', images:['day4_bugsdogs_1','day4_bugsdogs_2'], sentences:[
         {text:'Bugs and dogs.', words:['Bugs','and','dogs.'], blankWord:'Bugs', imageRef:'day4_bugsdogs_1'},
         {text:'The bugs like the dogs.', words:['The','bugs','like','the','dogs.'], blankWord:'like', imageRef:'day4_bugsdogs_1'},
@@ -1496,7 +1494,9 @@ const STORY_DATA = {
         {text:'This bug says, "Jig!"', words:['This','bug','says,','"Jig!"'], blankWord:'Jig', imageRef:'day4_bugfun_1'},
         {text:'"DOGS!" says this bug. "RUN!"', words:['"DOGS!"','says','this','bug.','"RUN!"'], blankWord:'DOGS', imageRef:'day4_bugfun_1'},
         {text:'Lots of dogs! Lots of bugs! Lots of fun!', words:['Lots','of','dogs!','Lots','of','bugs!','Lots','of','fun!'], blankWord:'fun', imageRef:'day4_bugfun_1'}
-      ]},
+      ]}
+    ]},
+    { id:4, title:'Day 4', stories:[
       { id:'cub-and-pup', title:'Cub and Pup', images:['day4_cubpup_1','day4_cubpup_2'], sentences:[
         {text:'Cub and Pup dig.', words:['Cub','and','Pup','dig.'], blankWord:'dig', imageRef:'day4_cubpup_1'},
         {text:'We can sit on it!', words:['We','can','sit','on','it!'], blankWord:'sit', imageRef:'day4_cubpup_1'},
@@ -1506,9 +1506,7 @@ const STORY_DATA = {
         {text:'Cub and Pup run.', words:['Cub','and','Pup','run.'], blankWord:'run', imageRef:'day4_cubpup_2'},
         {text:'The bug sits on the rug.', words:['The','bug','sits','on','the','rug.'], blankWord:'rug', imageRef:'day4_cubpup_2'},
         {text:'Not bad! I like this rug!', words:['Not','bad!','I','like','this','rug!'], blankWord:'rug', imageRef:'day4_cubpup_2'}
-      ]}
-    ]},
-    { id:5, title:'Day 5', stories:[
+      ]},
       { id:'look', title:'Look!', images:['day5_look_1'], sentences:[
         {text:'Look what bugs do.', words:['Look','what','bugs','do.'], blankWord:'bugs', imageRef:'day5_look_1'},
         {text:'Bugs hop on hot dogs!', words:['Bugs','hop','on','hot','dogs!'], blankWord:'hop', imageRef:'day5_look_1'},
@@ -1518,7 +1516,9 @@ const STORY_DATA = {
         {text:'Dogs run in mud!', words:['Dogs','run','in','mud!'], blankWord:'mud', imageRef:'day5_look_1'},
         {text:'Dads look at bugs.', words:['Dads','look','at','bugs.'], blankWord:'look', imageRef:'day5_look_1'},
         {text:'Dads hug kids, dogs, and cats!', words:['Dads','hug','kids,','dogs,','and','cats!'], blankWord:'hug', imageRef:'day5_look_1'}
-      ]},
+      ]}
+    ]},
+    { id:5, title:'Day 5', stories:[
       { id:'ned-and-ted', title:'Ned and Ted', images:['day5_nedted_1','day5_nedted_2'], sentences:[
         {text:'This is Ned.', words:['This','is','Ned.'], blankWord:'Ned', imageRef:'day5_nedted_1'},
         {text:'This is Ted.', words:['This','is','Ted.'], blankWord:'Ted', imageRef:'day5_nedted_1'},
@@ -1683,13 +1683,50 @@ function storyReadNext() {
 
 function speakSentence() {
   const s = currentStory.sentences[currentStory.idx];
+  if (!s) return;
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(s.text);
     u.lang = 'en-US'; u.rate = 0.8; u.pitch = 1.0;
+    // 모바일 음성 선택 (영어 음성 우선)
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
+    if (enVoice) u.voice = enVoice;
     window.speechSynthesis.speak(u);
+    // iOS 자동 일시정지 방지
+    if (/iPhone|iPad/i.test(navigator.userAgent)) {
+      const keepAlive = setInterval(() => {
+        if (!window.speechSynthesis.speaking) { clearInterval(keepAlive); return; }
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }, 5000);
+      u.onend = () => clearInterval(keepAlive);
+      u.onerror = () => clearInterval(keepAlive);
+    }
   }
 }
+
+// 모바일 TTS 초기화 (첫 터치로 오디오 컨텍스트 활성화)
+(function() {
+  let ttsReady = false;
+  function warmUpTTS() {
+    if (ttsReady) return;
+    ttsReady = true;
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      const u = new SpeechSynthesisUtterance('');
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+    }
+  }
+  document.addEventListener('click', warmUpTTS, {once: true});
+  document.addEventListener('touchstart', warmUpTTS, {once: true});
+  // 음성 목록 사전 로드
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
+})();
 
 // ===== MODE B: Fill in the Blank =====
 function initStoryFill() {
@@ -1704,9 +1741,7 @@ function renderFillQuestion() {
   const s = currentStory.sentences[currentStory.idx];
   document.getElementById('fill-round').textContent = `${currentStory.idx + 1} / ${currentStory.total}`;
   document.getElementById('fill-score').textContent = `${currentStory.score}점`;
-  document.getElementById('fill-img').src = '/static/images/storybook/' + s.imageRef + '.png';
-  document.getElementById('fill-img').onerror = function(){ this.style.display='none'; };
-  document.getElementById('fill-img').onload = function(){ this.style.display=''; };
+  // 이미지 제거됨 (Fill mode)
 
   // Build sentence with blank
   const blankWord = s.blankWord;
@@ -1783,9 +1818,7 @@ function renderUnscrQuestion() {
   const s = currentStory.sentences[currentStory.idx];
   document.getElementById('unscr-round').textContent = `${currentStory.idx + 1} / ${currentStory.total}`;
   document.getElementById('unscr-score').textContent = `${currentStory.score}점`;
-  document.getElementById('unscr-img').src = '/static/images/storybook/' + s.imageRef + '.png';
-  document.getElementById('unscr-img').onerror = function(){ this.style.display='none'; };
-  document.getElementById('unscr-img').onload = function(){ this.style.display=''; };
+  // 이미지 제거됨 (Unscramble mode)
 
   // Drop slots
   const dz = document.getElementById('unscr-dropzone');
