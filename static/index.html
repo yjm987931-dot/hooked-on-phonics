@@ -767,6 +767,9 @@ nav .user-info button { font-size:12px; padding:6px 12px; }
         <div class="score" id="fill-score">0점</div>
       </div>
       <div class="story-image-container"><img id="fill-img" src="" alt="Story" style="max-height:200px;border-radius:12px"></div>
+      <div style="text-align:center;margin:8px 0">
+        <button class="btn-outline btn-sm" onclick="fillSpeak()" style="border-radius:50%;width:40px;height:40px;padding:0;font-size:20px" title="문장 듣기">&#128264;</button>
+      </div>
       <div class="fill-sentence" id="fill-sentence"></div>
       <div class="word-bank" id="fill-bank"></div>
     </div>
@@ -790,6 +793,9 @@ nav .user-info button { font-size:12px; padding:6px 12px; }
         <div class="score" id="unscr-score">0점</div>
       </div>
       <div class="story-image-container"><img id="unscr-img" src="" alt="Story" style="max-height:200px;border-radius:12px"></div>
+      <div style="text-align:center;margin:8px 0">
+        <button class="btn-outline btn-sm" onclick="unscrSpeak()" style="border-radius:50%;width:40px;height:40px;padding:0;font-size:20px" title="문장 듣기">&#128264;</button>
+      </div>
       <div class="drop-zone" id="unscr-dropzone"></div>
       <div class="scramble-bank" id="unscr-bank"></div>
       <div style="text-align:center;margin-top:16px">
@@ -2075,6 +2081,34 @@ function unscrPlaceWord(slot) {
   selectedWordEl.classList.add('used');
   selectedWordEl.classList.remove('selected');
   selectedWordEl = null;
+}
+
+function unscrSpeak() {
+  const s = currentStory.sentences ? currentStory.sentences[currentStory.idx] : null;
+  if (!s) return;
+  const audio = new Audio('/api/tts?text=' + encodeURIComponent(s.text));
+  audio.play().catch(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(s.text);
+      u.lang = 'en-US'; u.rate = 0.8;
+      window.speechSynthesis.speak(u);
+    }
+  });
+}
+
+function fillSpeak() {
+  const s = currentStory.sentences ? currentStory.sentences[currentStory.idx] : null;
+  if (!s) return;
+  const audio = new Audio('/api/tts?text=' + encodeURIComponent(s.text));
+  audio.play().catch(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(s.text);
+      u.lang = 'en-US'; u.rate = 0.8;
+      window.speechSynthesis.speak(u);
+    }
+  });
 }
 
 function checkUnscramble() {
