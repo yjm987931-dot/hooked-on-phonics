@@ -7,7 +7,9 @@ CD 없이도 내장 데이터로 작동
 import os, json, hashlib, secrets, sqlite3
 from pathlib import Path
 from functools import wraps
-from flask import Flask, request, jsonify, session, send_from_directory
+from urllib.request import urlopen, Request
+from urllib.parse import quote
+from flask import Flask, request, jsonify, session, send_from_directory, Response
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
@@ -459,6 +461,24 @@ def has_media():
     has_img = img_dir.exists() and any(img_dir.rglob('*.png'))
     has_aud = aud_dir.exists() and any(aud_dir.rglob('*.wav'))
     return jsonify({'images': has_img, 'audio': has_aud})
+
+
+# ===== TTS Proxy (모바일 CORS 우회) =====
+@app.route('/api/tts')
+def tts_proxy():
+    text = request.args.get('text', '').strip()
+    if not text or len(text) > 500:
+        return Response(b'', status=400)
+    try:
+        encoded = quote(text)
+        url = f'https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q={encoded}'
+        req = Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://translate.google.com/'})
+        resp = urlopen(req, timeout=5)
+        audio_data = resp.read()
+        return Response(audio_data, mimetype='audio/mpeg',
+                        headers={'Cache-Control': 'public, max-age=86400'})
+    except Exception:
+        return Response(b'', status=502)
 
 
 # ===== Password Change =====

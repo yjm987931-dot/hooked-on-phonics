@@ -1681,30 +1681,25 @@ function storyReadNext() {
   speakSentence();
 }
 
-// ===== 문장 TTS (Google TTS Audio, Android+iOS 모두 지원) =====
+// ===== 문장 TTS (서버 프록시, 모바일 CORS 문제 해결) =====
 let storyAudio = null;
 function speakSentence() {
   const s = currentStory.sentences ? currentStory.sentences[currentStory.idx] : null;
   if (!s) return;
-  // 이전 재생 중지
   if (storyAudio) { storyAudio.pause(); storyAudio = null; }
-  // Google TTS: Audio 요소로 재생 (모바일 가장 안정적)
-  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=' + encodeURIComponent(s.text);
-  storyAudio = new Audio(url);
-  const playPromise = storyAudio.play();
-  if (playPromise !== undefined) {
-    playPromise.catch(() => {
-      // Google TTS 실패 시 Web Speech API
-      try {
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const u = new SpeechSynthesisUtterance(s.text);
-          u.lang = 'en-US'; u.rate = 0.8;
-          window.speechSynthesis.speak(u);
-        }
-      } catch(e) {}
-    });
-  }
+  // 서버 프록시로 오디오 재생 (same-origin → 모바일 100% 호환)
+  storyAudio = new Audio('/api/tts?text=' + encodeURIComponent(s.text));
+  storyAudio.play().catch(() => {
+    // 서버 프록시 실패 시 Web Speech API 폴백
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(s.text);
+        u.lang = 'en-US'; u.rate = 0.8;
+        window.speechSynthesis.speak(u);
+      }
+    } catch(e) {}
+  });
 }
 
 // ===== MODE B: Fill in the Blank =====
