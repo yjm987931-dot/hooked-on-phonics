@@ -348,6 +348,13 @@ nav .user-info button { font-size:12px; padding:6px 12px; }
 .bubble-listen-btn { width:32px; height:32px; border-radius:50%; border:none; background:linear-gradient(135deg,#4361ee,#3a86ff); color:white; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
 #bubbleResultDetail { color:rgba(255,255,255,0.6); font-size:14px; margin-bottom:16px; text-align:center; line-height:1.6; }
 
+/* ===== Review Banner (과제 완료 후 복습) ===== */
+.hw-review-banner { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); border-radius:var(--radius); padding:24px; margin-bottom:20px; text-align:center; color:#fff; box-shadow:0 6px 20px rgba(118,75,162,0.3); }
+.hw-review-banner h3 { font-size:18px; margin-bottom:8px; }
+.hw-review-banner p { font-size:13px; opacity:0.85; margin-bottom:14px; }
+.hw-review-banner button { background:#fff; color:#6C63FF; font-weight:700; font-size:15px; padding:12px 28px; border-radius:12px; border:none; cursor:pointer; transition:all .2s; }
+.hw-review-banner button:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+
 /* ===== Date Group Cards (학생 과제) ===== */
 .hw-date-group { margin-bottom:20px; }
 .hw-date-header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:#E8E6FF; border-radius:12px 12px 0 0; font-weight:700; font-size:15px; color:var(--primary); }
@@ -1322,6 +1329,23 @@ function endGameShow() {
   }
   saveResult(gsLabelName, gsState.score / 10, gsState.total, gsState.score);
   reviewMode = null;
+  checkAllWordsComplete('gs-final-msg');
+}
+
+// Words 과제 완료 시 다음 복습 안내
+async function checkAllWordsComplete(msgElId) {
+  if (!homeworkCache.length) return;
+  await checkHomeworkCompletion();
+  const wordsHw = homeworkCache.filter(h => h.hw_type === 'words' && h.hw_target.startsWith('word_lv'));
+  const completedLevels = new Set(wordsHw.filter(h => h.completed).map(h => parseInt(h.hw_target.replace('word_lv',''))));
+  // 방금 완료한 레벨로 가능한 다음 복습 찾기
+  const nextReview = REVIEWS.find(r => r.levels.every(lv => completedLevels.has(lv)));
+  if (nextReview) {
+    const el = document.getElementById(msgElId);
+    if (el) el.innerHTML += `<br><br><span style="color:#FFD166;font-weight:700">&#127881; 복습 가능!</span><br>` +
+      `<button class="btn-primary" style="margin-top:8px;background:linear-gradient(135deg,#667eea,#764ba2)" onclick="startReview(${JSON.stringify(nextReview.levels)},'${nextReview.label}')">` +
+      `${nextReview.label} 복습하기</button>`;
+  }
 }
 
 // ===== Spelling Quiz =====
@@ -1404,6 +1428,7 @@ function endSpelling() {
   }
   saveResult(spLabelName, Math.round(spState.score/10), spState.total, spState.score);
   reviewMode = null;
+  checkAllWordsComplete('sp-final-msg');
 }
 
 // Enter key for spelling
@@ -2387,6 +2412,29 @@ function renderHomework(progData) {
   // Sort dates descending
   const sortedDates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
   let html = '';
+
+  // 복습 배너: Words 과제 완료 레벨에 따라 해당 복습 카드 표시
+  const wordsHw = homeworkCache.filter(h => h.hw_type === 'words' && h.hw_target.startsWith('word_lv'));
+  const completedLevels = new Set(wordsHw.filter(h => h.completed).map(h => parseInt(h.hw_target.replace('word_lv',''))));
+  // 완료된 레벨에 해당하는 복습 카드만 표시
+  const availableReviews = REVIEWS.filter(r => r.levels.every(lv => completedLevels.has(lv)));
+  if (availableReviews.length > 0) {
+    html += `<div class="hw-review-banner">
+      <h3>&#127881; 복습 모드</h3>
+      <p>완료한 레벨을 복습해보세요!</p>
+      <div class="review-grid" style="margin-top:12px">`;
+    for (let i = 0; i < availableReviews.length; i++) {
+      const r = availableReviews[i];
+      const wordCount = r.levels.reduce((sum,lv) => sum + (LEVELS[lv]?.words||[]).length, 0);
+      html += `<div class="review-card" onclick="startReview(${JSON.stringify(r.levels)},'${r.label}')">
+        <div class="review-num">${i+1}</div>
+        <div class="review-sub">${r.label}</div>
+        <div class="review-words">${wordCount}개</div>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+
   for (const dateStr of sortedDates) {
     const items = groups[dateStr];
     const dt = new Date(dateStr);
