@@ -348,13 +348,6 @@ nav .user-info button { font-size:12px; padding:6px 12px; }
 .bubble-listen-btn { width:32px; height:32px; border-radius:50%; border:none; background:linear-gradient(135deg,#4361ee,#3a86ff); color:white; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
 #bubbleResultDetail { color:rgba(255,255,255,0.6); font-size:14px; margin-bottom:16px; text-align:center; line-height:1.6; }
 
-/* ===== Review Banner (과제 완료 후 복습) ===== */
-.hw-review-banner { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); border-radius:var(--radius); padding:24px; margin-bottom:20px; text-align:center; color:#fff; box-shadow:0 6px 20px rgba(118,75,162,0.3); }
-.hw-review-banner h3 { font-size:18px; margin-bottom:8px; }
-.hw-review-banner p { font-size:13px; opacity:0.85; margin-bottom:14px; }
-.hw-review-banner button { background:#fff; color:#6C63FF; font-weight:700; font-size:15px; padding:12px 28px; border-radius:12px; border:none; cursor:pointer; transition:all .2s; }
-.hw-review-banner button:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.2); }
-
 /* ===== Date Group Cards (학생 과제) ===== */
 .hw-date-group { margin-bottom:20px; }
 .hw-date-header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:#E8E6FF; border-radius:12px 12px 0 0; font-weight:700; font-size:15px; color:var(--primary); }
@@ -1329,23 +1322,6 @@ function endGameShow() {
   }
   saveResult(gsLabelName, gsState.score / 10, gsState.total, gsState.score);
   reviewMode = null;
-  checkAllWordsComplete('gs-final-msg');
-}
-
-// Words 과제 완료 시 다음 복습 안내
-async function checkAllWordsComplete(msgElId) {
-  if (!homeworkCache.length) return;
-  await checkHomeworkCompletion();
-  const wordsHw = homeworkCache.filter(h => h.hw_type === 'words' && h.hw_target.startsWith('word_lv'));
-  const completedLevels = new Set(wordsHw.filter(h => h.completed).map(h => parseInt(h.hw_target.replace('word_lv',''))));
-  // 방금 완료한 레벨로 가능한 다음 복습 찾기
-  const nextReview = REVIEWS.find(r => r.levels.every(lv => completedLevels.has(lv)));
-  if (nextReview) {
-    const el = document.getElementById(msgElId);
-    if (el) el.innerHTML += `<br><br><span style="color:#FFD166;font-weight:700">&#127881; 복습 가능!</span><br>` +
-      `<button class="btn-primary" style="margin-top:8px;background:linear-gradient(135deg,#667eea,#764ba2)" onclick="startReview(${JSON.stringify(nextReview.levels)},'${nextReview.label}')">` +
-      `${nextReview.label} 복습하기</button>`;
-  }
 }
 
 // ===== Spelling Quiz =====
@@ -1428,7 +1404,6 @@ function endSpelling() {
   }
   saveResult(spLabelName, Math.round(spState.score/10), spState.total, spState.score);
   reviewMode = null;
-  checkAllWordsComplete('sp-final-msg');
 }
 
 // Enter key for spelling
@@ -2378,6 +2353,18 @@ async function checkHomeworkCompletion() {
         await fetch(`/api/homework/${hw.id}/complete`, {method:'POST'});
         hw.completed = 1;
       }
+    } else if (hw.hw_type === 'review' && hw.hw_target.startsWith('review_')) {
+      // Review 과제: 복습 듣기+스펠링 둘 다 해야 완료
+      const rIdx = parseInt(hw.hw_target.replace('review_',''));
+      const r = REVIEWS[rIdx];
+      if (r) {
+        const hasListen = progHistory.some(p => p.activity && p.activity.includes('복습 듣기') && p.activity.includes(r.label));
+        const hasSpell = progHistory.some(p => p.activity && p.activity.includes('복습 스펠링') && p.activity.includes(r.label));
+        if (hasListen && hasSpell) {
+          await fetch(`/api/homework/${hw.id}/complete`, {method:'POST'});
+          hw.completed = 1;
+        }
+      }
     }
   }
 }
@@ -2412,28 +2399,6 @@ function renderHomework(progData) {
   // Sort dates descending
   const sortedDates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
   let html = '';
-
-  // 복습 배너: Words 과제 완료 레벨에 따라 해당 복습 카드 표시
-  const wordsHw = homeworkCache.filter(h => h.hw_type === 'words' && h.hw_target.startsWith('word_lv'));
-  const completedLevels = new Set(wordsHw.filter(h => h.completed).map(h => parseInt(h.hw_target.replace('word_lv',''))));
-  // 완료된 레벨에 해당하는 복습 카드만 표시
-  const availableReviews = REVIEWS.filter(r => r.levels.every(lv => completedLevels.has(lv)));
-  if (availableReviews.length > 0) {
-    html += `<div class="hw-review-banner">
-      <h3>&#127881; 복습 모드</h3>
-      <p>완료한 레벨을 복습해보세요!</p>
-      <div class="review-grid" style="margin-top:12px">`;
-    for (let i = 0; i < availableReviews.length; i++) {
-      const r = availableReviews[i];
-      const wordCount = r.levels.reduce((sum,lv) => sum + (LEVELS[lv]?.words||[]).length, 0);
-      html += `<div class="review-card" onclick="startReview(${JSON.stringify(r.levels)},'${r.label}')">
-        <div class="review-num">${i+1}</div>
-        <div class="review-sub">${r.label}</div>
-        <div class="review-words">${wordCount}개</div>
-      </div>`;
-    }
-    html += `</div></div>`;
-  }
 
   for (const dateStr of sortedDates) {
     const items = groups[dateStr];
@@ -2484,6 +2449,19 @@ function renderHwCard(hw, progData) {
     // 듣기 먼저, 스펠링 다음으로 이동
     if (!hasListening) goAction = `changeGsLevel('${lv}');showScreen('gameshow')`;
     else if (!hasSpelling) goAction = `changeSpLevel('${lv}');showScreen('spelling')`;
+  } else if (hw.hw_type === 'review' && hw.hw_target.startsWith('review_')) {
+    const rIdx = parseInt(hw.hw_target.replace('review_',''));
+    const r = REVIEWS[rIdx];
+    if (r) {
+      const history = progData.history || [];
+      const hasListen = history.some(p => p.activity && p.activity.includes('복습 듣기') && p.activity.includes(r.label));
+      const hasSpell = history.some(p => p.activity && p.activity.includes('복습 스펠링') && p.activity.includes(r.label));
+      const lScore = history.find(p => p.activity && p.activity.includes('복습 듣기') && p.activity.includes(r.label));
+      const sScore = history.find(p => p.activity && p.activity.includes('복습 스펠링') && p.activity.includes(r.label));
+      detailHtml = `듣기: ${hasListen ? '✅ '+(lScore?lScore.score+'점':'완료') : '❌ 미완료'}<br>스펠링: ${hasSpell ? '✅ '+(sScore?sScore.score+'점':'완료') : '❌ 미완료'}`;
+      const lvs = JSON.stringify(r.levels).replace(/"/g,'&quot;');
+      goAction = `startReview(${JSON.stringify(r.levels)},'${r.label}')`;
+    }
   } else {
     // 기존 개별 과제 호환
     const target = hw.hw_target;
@@ -2502,7 +2480,7 @@ function renderHwCard(hw, progData) {
   }
 
   const dueStr = hw.due_date ? `마감: ${hw.due_date}` : '';
-  const icon = hw.hw_type === 'storybook' ? '&#128214;' : '&#127918;';
+  const icon = hw.hw_type === 'storybook' ? '&#128214;' : hw.hw_type === 'review' ? '&#128257;' : '&#127918;';
 
   return `<div class="hw-card ${isDone ? 'done' : 'pending'}">
     <div class="hw-icon">${icon}</div>
@@ -2592,7 +2570,7 @@ function renderCalDayDetail(dateStr, items) {
     for (const [target, g] of Object.entries(groups)) {
       const done = g.items.filter(i => i.completed).length;
       const total = g.items.length;
-      const icon = g.type === 'storybook' ? '&#128214;' : '&#127918;';
+      const icon = g.type === 'storybook' ? '&#128214;' : g.type === 'review' ? '&#128257;' : '&#127918;';
       html += `<div class="hw-cal-item">
         <span class="hw-cal-icon">${icon}</span>
         <span class="hw-cal-info"><strong>${g.label}</strong></span>
@@ -2608,6 +2586,7 @@ function renderCalDayDetail(dateStr, items) {
     <select id="cal-hw-type" onchange="updateCalOptions()">
       <option value="words">Words</option>
       <option value="storybook">Story Book</option>
+      <option value="review">Review (복습)</option>
     </select>
     <select id="cal-hw-target-sel">${[1,2,3,4,5,6].map(l=>`<option value="${l}">Level ${l}</option>`).join('')}</select>
     <button class="btn-secondary btn-sm" onclick="assignHwForDate('${dateStr}')">배정</button>
@@ -2621,6 +2600,8 @@ function updateCalOptions() {
   const sel = document.getElementById('cal-hw-target-sel');
   if (type === 'words') {
     sel.innerHTML = [1,2,3,4,5,6].map(l => `<option value="${l}">Level ${l}</option>`).join('');
+  } else if (type === 'review') {
+    sel.innerHTML = REVIEWS.map((r,i) => `<option value="${i}">R${i+1} (${r.label})</option>`).join('');
   } else {
     sel.innerHTML = [1,2,3,4,5].map(d => `<option value="${d}">Day ${d}</option>`).join('');
   }
@@ -2632,6 +2613,9 @@ async function assignHwForDate(dateStr) {
   let hwType, hwTarget, hwLabel;
   if (type === 'words') {
     hwType = 'words'; hwTarget = `word_lv${target}`; hwLabel = `Words Level ${target} (듣기+스펠링)`;
+  } else if (type === 'review') {
+    const r = REVIEWS[parseInt(target)];
+    hwType = 'review'; hwTarget = `review_${target}`; hwLabel = `Review ${parseInt(target)+1} (${r.label})`;
   } else {
     hwType = 'storybook'; hwTarget = `day_${target}`; hwLabel = `Story Book Day ${target}`;
   }
